@@ -56,6 +56,16 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user, fetchMoods]);
 
+  // Clean up old entries to manage storage space
+  const cleanupOldEntries = useCallback((allMoods: MoodEntry[], userId: string) => {
+    // Keep entries from the last 6 months to ensure we have at least 3 months capacity
+    const sixMonthsAgo = Date.now() - (180 * 24 * 60 * 60 * 1000);
+    return allMoods.filter(m => 
+      m.userId !== userId || // Keep other users' data
+      m.timestamp > sixMonthsAgo // Keep recent entries for current user
+    );
+  }, []);
+
   const addMood = useCallback(async (entryData: Omit<MoodEntry, 'id' | 'timestamp' | 'userId'>) => {
     if (!user) return;
 
@@ -69,7 +79,11 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Save to LS
       const allMoodsJson = localStorage.getItem(DB_MOODS_KEY);
-      const allMoods: MoodEntry[] = allMoodsJson ? JSON.parse(allMoodsJson) : [];
+      let allMoods: MoodEntry[] = allMoodsJson ? JSON.parse(allMoodsJson) : [];
+      
+      // Clean up old entries to manage storage
+      allMoods = cleanupOldEntries(allMoods, user.id);
+      
       allMoods.push(newEntry);
       localStorage.setItem(DB_MOODS_KEY, JSON.stringify(allMoods));
 
@@ -99,9 +113,9 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {
       console.error("Failed to add mood", e);
-      alert("保存失败，可能是本地存储已满（尤其是上传图片时）");
+      alert("保存失败，可能是本地存储已满");
     }
-  }, [user]);
+  }, [user, cleanupOldEntries]);
 
   const deleteMood = useCallback(async (id: string) => {
     if (!user) return;

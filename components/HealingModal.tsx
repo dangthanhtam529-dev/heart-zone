@@ -64,16 +64,6 @@ export const HealingModal: React.FC = () => {
             <div className="bg-stone-50 rounded-xl p-3 text-sm text-stone-600 border border-stone-100/50">
                正在：{healingSuggestion.activity}
             </div>
-            
-            {healingSuggestion.photoUrl && (
-               <div className="mt-3 rounded-xl overflow-hidden h-32 w-full">
-                  <img 
-                     src={healingSuggestion.photoUrl} 
-                     className="w-full h-full object-cover"
-                     alt="Happy memory"
-                  />
-               </div>
-            )}
           </div>
 
           <Button fullWidth onClick={clearHealingSuggestion} className="bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white border-0 shadow-lg shadow-orange-200/50 py-3.5 text-lg rounded-2xl">

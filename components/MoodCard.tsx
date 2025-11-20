@@ -57,41 +57,7 @@ export const MoodCard: React.FC<MoodCardProps> = ({ entry, onDelete }) => {
             </p>
           )}
         </div>
-
-        {/* Photo Thumbnail */}
-        {entry.photoUrl && (
-          <div className="mt-4 relative group/image">
-            <div className="overflow-hidden rounded-2xl">
-                <img 
-                src={entry.photoUrl} 
-                alt="Mood memory" 
-                className="w-full h-32 object-cover transform group-hover/image:scale-105 transition-transform duration-500 cursor-pointer"
-                onClick={() => setIsExpanded(true)}
-                />
-            </div>
-            <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/10 transition-all rounded-2xl flex items-center justify-center pointer-events-none">
-               <Maximize2 className="text-white opacity-0 group-hover/image:opacity-100 drop-shadow-md transform scale-75 group-hover/image:scale-100 transition-all" />
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Image Modal */}
-      {isExpanded && entry.photoUrl && (
-        <div className="fixed inset-0 z-50 bg-stone-900/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setIsExpanded(false)}>
-          <button 
-            className="absolute top-6 right-6 text-white/80 hover:text-white p-2 bg-white/10 rounded-full backdrop-blur-md transition-all"
-            onClick={() => setIsExpanded(false)}
-          >
-            <X size={24} />
-          </button>
-          <img 
-            src={entry.photoUrl} 
-            alt="Full memory" 
-            className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl animate-fade-in"
-          />
-        </div>
-      )}
     </>
   );
 };

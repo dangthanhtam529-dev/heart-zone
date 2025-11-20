@@ -1,38 +1,21 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMoodStore } from '../context/MoodContext';
 import { MoodType } from '../types';
 import { MOOD_CONFIGS, getMoodIcon } from '../constants';
 import { Button } from '../components/Button';
-import { MapPin, Activity, Camera, X } from 'lucide-react';
+import { MapPin, Activity } from 'lucide-react';
 
 export const CreateMood: React.FC = () => {
   const navigate = useNavigate();
   const { addMood } = useMoodStore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [location, setLocation] = useState('');
   const [activity, setActivity] = useState('');
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   const [note, setNote] = useState('');
-  const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('图片大小不能超过 5MB');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +28,6 @@ export const CreateMood: React.FC = () => {
         location: location || '未知地点',
         activity: activity || '发呆',
         mood: selectedMood,
-        photoUrl,
         note
       });
       navigate('/list');
@@ -133,43 +115,6 @@ export const CreateMood: React.FC = () => {
               className="w-full p-4 bg-white rounded-2xl border border-stone-100 focus:border-orange-300 focus:ring-4 focus:ring-orange-100/50 outline-none transition-all placeholder-stone-300 text-stone-700 text-sm resize-none shadow-sm"
             />
            </div>
-        </section>
-
-        {/* Photo Upload */}
-        <section>
-          <input
-            type="file"
-            ref={fileInputRef}
-            accept="image/png, image/jpeg"
-            className="hidden"
-            onChange={handleImageUpload}
-          />
-          
-          {!photoUrl ? (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full border-2 border-dashed border-stone-200 rounded-2xl p-8 flex flex-col items-center justify-center text-stone-400 hover:text-orange-500 hover:border-orange-300 hover:bg-orange-50/30 transition-all duration-300 group"
-            >
-              <div className="bg-stone-100 p-3 rounded-full mb-3 group-hover:bg-white transition-colors">
-                <Camera size={24} />
-              </div>
-              <span className="text-sm font-medium">添加照片 (可选)</span>
-            </button>
-          ) : (
-            <div className="relative rounded-2xl overflow-hidden shadow-lg group">
-              <img src={photoUrl} alt="Preview" className="w-full h-56 object-cover" />
-              <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                 <button
-                   type="button"
-                   onClick={() => setPhotoUrl(undefined)}
-                   className="bg-white text-rose-500 px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-rose-50 hover:scale-105 transition shadow-lg font-medium"
-                 >
-                   <X size={16} /> 移除照片
-                 </button>
-              </div>
-            </div>
-          )}
         </section>
 
         <div className="pt-4">
