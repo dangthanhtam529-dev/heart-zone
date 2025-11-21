@@ -1,10 +1,10 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useMoodStore } from '../context/MoodContext';
 import { Button } from '../components/Button';
 import { User, LogOut, Lock, Edit2, Check, Calendar, Smile, Zap, Download, Trash2 } from 'lucide-react';
 import { MOOD_CONFIGS } from '../constants';
+import { MoodType } from '../types';
 
 export const Profile: React.FC = () => {
   const { user, logout, updateProfile, changePassword } = useAuth();
@@ -20,7 +20,10 @@ export const Profile: React.FC = () => {
   // Stats
   const stats = useMemo(() => {
     const totalDays = new Set(moods.map(m => new Date(m.timestamp).toDateString())).size;
-    const happyCount = moods.filter(m => MOOD_CONFIGS[m.mood].score >= 4).length;
+    // 修复开心时刻的计算，只计算开心的情绪
+    const happyCount = moods.filter(m => 
+      m.mood === MoodType.HAPPY
+    ).length;
     return { totalDays, happyCount, total: moods.length };
   }, [moods]);
 

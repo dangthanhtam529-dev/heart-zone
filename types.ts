@@ -33,3 +33,16 @@ export interface User {
   avatar?: string;
   createdAt: number;
 }
+
+// 报告类型
+export interface MoodReport {
+  id: string;
+  type: 'weekly' | 'monthly';
+  startDate: Date;
+  endDate: Date;
+  minScore: number;
+  maxScore: number;
+  avgScore: number;
+  userId: string;
+  createdAt: number;
+}
