@@ -117,7 +117,7 @@ export const MoodList: React.FC = () => {
               .map((report) => (
                 <div key={report.id} className="bg-white rounded-3xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-stone-100 hover:shadow-[0_4px_20px_rgba(251,146,60,0.1)] transition-all duration-300 relative overflow-hidden group">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-bold text-stone-700 text-lg tracking-tight">第{getWeekNumber(new Date(report.startDate))}周心情报告</h3>
+                    <h3 className="font-bold text-stone-700 text-lg tracking-tight">第{getWeekNumberInMonth(new Date(report.startDate))}周心情报告</h3>
                     <button 
                       onClick={() => deleteWeeklyReport(report.id)}
                       className="text-stone-300 hover:text-rose-400 transition-colors p-2 opacity-0 group-hover:opacity-100"
@@ -128,7 +128,7 @@ export const MoodList: React.FC = () => {
                   
                   <div className="space-y-3 mt-3">
                     <p className="text-stone-600 text-sm leading-relaxed">
-                      {user?.username || '用户'}您好，{new Date(report.startDate).getFullYear()}年{new Date(report.startDate).getMonth() + 1}月的第{getWeekNumber(new Date(report.startDate))}周快要过去了，您本周心情平均值为{report.avgScore}，希望您下周过得更好
+                      {user?.username || '用户'}您好，{new Date(report.startDate).getFullYear()}年{new Date(report.startDate).getMonth() + 1}月的第{getWeekNumberInMonth(new Date(report.startDate))}周快要过去了，您本周心情平均值为{report.avgScore}，希望您下周过得更好
                     </p>
                   </div>
                 </div>
@@ -345,9 +345,12 @@ const HeartSea: React.FC<{ moods: any[] }> = ({ moods }) => {
   );
 };
 
-// Helper function to calculate week number
-const getWeekNumber = (date: Date) => {
-  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-  const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+// Helper function to calculate week number in month
+const getWeekNumberInMonth = (date: Date) => {
+  const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+  const firstDayOfWeek = firstDayOfMonth.getDay();
+  const dayOfMonth = date.getDate();
+  
+  // Calculate which week of the month this date is in
+  return Math.ceil((dayOfMonth + firstDayOfWeek) / 7);
 };

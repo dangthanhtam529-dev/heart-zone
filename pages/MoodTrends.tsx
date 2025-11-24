@@ -69,12 +69,35 @@ export const MoodTrends: React.FC = () => {
     return data;
   }, [moods, timeRange]);
 
-  // Calculate basic stats
+  // Calculate filtered moods based on time range
+  const filteredMoods = useMemo(() => {
+    return moods.filter(mood => {
+      const moodDate = new Date(mood.timestamp);
+      const now = new Date();
+      
+      switch (timeRange) {
+        case 'week':
+          const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+          const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+          return moodDate >= weekStart && moodDate <= weekEnd;
+        case 'month':
+          const monthStart = startOfMonth(now);
+          const monthEnd = endOfMonth(now);
+          return moodDate >= monthStart && moodDate <= monthEnd;
+        default: // 30 days
+          const thirtyDaysAgo = subDays(now, 29); // 29 because we include today
+          return moodDate >= thirtyDaysAgo && moodDate <= now;
+      }
+    });
+  }, [moods, timeRange]);
+
+  // Calculate average mood based on filtered moods
   const averageMood = useMemo(() => {
-     if (moods.length === 0) return 0;
-     const sum = moods.reduce((acc, m) => acc + MOOD_CONFIGS[m.mood].score, 0);
-     return (sum / moods.length).toFixed(1);
-  }, [moods]);
+    if (filteredMoods.length === 0) return 0;
+    
+    const sum = filteredMoods.reduce((acc, m) => acc + MOOD_CONFIGS[m.mood].score, 0);
+    return (sum / filteredMoods.length).toFixed(1);
+  }, [filteredMoods]);
 
   return (
     <div className="p-6 pt-12 min-h-screen">
@@ -85,7 +108,7 @@ export const MoodTrends: React.FC = () => {
             <span className="text-xs text-orange-600/70 block font-medium mb-1">
               {timeRange === 'week' ? '本周记录' : timeRange === 'month' ? '本月记录' : '近30天记录'}
             </span>
-            <span className="text-2xl font-bold text-orange-500">{moods.length} <span className="text-xs font-normal text-orange-400">条</span></span>
+            <span className="text-2xl font-bold text-orange-500">{filteredMoods.length} <span className="text-xs font-normal text-orange-400">条</span></span>
           </div>
           <div className="bg-stone-50 px-4 py-3 rounded-2xl border border-stone-100 flex-1">
             <span className="text-xs text-stone-500 block font-medium mb-1">平均心情值</span>
