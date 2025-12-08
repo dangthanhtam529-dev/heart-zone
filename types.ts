@@ -45,4 +45,7 @@ export interface MoodReport {
   avgScore: number;
   userId: string;
   createdAt: number;
+  totalEntries: number; // 总记录数
+  topMood: MoodType | null; // 出现次数最多的心情
+  moodCounts: Record<MoodType, number>; // 各心情计数
 }

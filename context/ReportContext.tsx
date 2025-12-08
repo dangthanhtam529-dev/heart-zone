@@ -1,9 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { MoodReport } from '../types';
+import { MoodReport, MoodType } from '../types';
 import { useAuth } from './AuthContext';
 import { useMoodStore } from './MoodContext';
 import { MOOD_CONFIGS } from '../constants';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameWeek, isSameMonth, format, isSunday, isLastDayOfMonth } from 'date-fns';
+import { 
+  startOfWeek, endOfWeek, startOfMonth, endOfMonth, 
+  isSameWeek, isSameMonth, format, isSunday, isLastDayOfMonth,
+  subWeeks, subMonths, isBefore, isAfter, setHours, setMinutes
+} from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
 interface ReportContextType {
@@ -17,6 +21,36 @@ const ReportContext = createContext<ReportContextType | undefined>(undefined);
 
 const DB_WEEKLY_REPORTS_KEY = 'heartspace_weekly_reports';
 const DB_MONTHLY_REPORTS_KEY = 'heartspace_monthly_reports';
+
+// Helper to calculate statistics
+const calculateMoodStats = (moods: any[]) => {
+  const moodCounts: Record<MoodType, number> = {
+    [MoodType.HAPPY]: 0,
+    [MoodType.CALM]: 0,
+    [MoodType.NEUTRAL]: 0,
+    [MoodType.TIRED]: 0,
+    [MoodType.SAD]: 0,
+    [MoodType.ANNOYED]: 0,
+  };
+
+  moods.forEach(mood => {
+    if (moodCounts[mood.mood] !== undefined) {
+      moodCounts[mood.mood]++;
+    }
+  });
+
+  let topMood: MoodType | null = null;
+  let maxCount = 0;
+
+  (Object.keys(moodCounts) as MoodType[]).forEach(mood => {
+    if (moodCounts[mood] > maxCount) {
+      maxCount = moodCounts[mood];
+      topMood = mood;
+    }
+  });
+
+  return { moodCounts, topMood, totalEntries: moods.length };
+};
 
 export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -55,128 +89,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [user, fetchReports]);
 
-  // Auto-generate weekly reports
-  useEffect(() => {
-    if (!user) return;
-
-    const generateWeeklyReportIfNeeded = () => {
-      const now = new Date();
-      // Check if today is Sunday and past 12:00 PM
-      if (isSunday(now) && now.getHours() >= 12) {
-        // Check if a report for this week already exists
-        const existingReport = weeklyReports.find(report => 
-          isSameWeek(new Date(report.startDate), now, { weekStartsOn: 1 })
-        );
-        
-        if (!existingReport) {
-          // Get the current week range
-          const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-          const weekEnd = endOfWeek(now, { weekStartsOn: 1 }); // Sunday
-          
-          // Filter moods for this week
-          const weeklyMoods = moods.filter(mood => {
-            const moodDate = new Date(mood.timestamp);
-            return moodDate >= weekStart && moodDate <= weekEnd;
-          });
-          
-          if (weeklyMoods.length > 0) {
-            // Calculate statistics
-            const scores = weeklyMoods.map(m => MOOD_CONFIGS[m.mood].score);
-            const minScore = Math.min(...scores);
-            const maxScore = Math.max(...scores);
-            const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-            
-            // Create new report
-            const newReport: MoodReport = {
-              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-              type: 'weekly',
-              startDate: weekStart,
-              endDate: weekEnd,
-              minScore: parseFloat(minScore.toFixed(1)),
-              maxScore: parseFloat(maxScore.toFixed(1)),
-              avgScore: parseFloat(avgScore.toFixed(1)),
-              userId: user.id,
-              createdAt: Date.now()
-            };
-            
-            const updatedReports = [newReport, ...weeklyReports];
-            setWeeklyReports(updatedReports);
-            saveWeeklyReports(updatedReports);
-          }
-        }
-      }
-    };
-
-    // Run once on mount
-    generateWeeklyReportIfNeeded();
-
-    // Check every hour
-    const interval = setInterval(generateWeeklyReportIfNeeded, 60 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, [user, moods, weeklyReports]);
-
-  // Auto-generate monthly reports
-  useEffect(() => {
-    if (!user) return;
-
-    const generateMonthlyReportIfNeeded = () => {
-      const now = new Date();
-      // Check if today is the last day of the month and past 12:00 PM
-      if (isLastDayOfMonth(now) && now.getHours() >= 12) {
-        // Check if a report for this month already exists
-        const existingReport = monthlyReports.find(report => 
-          isSameMonth(new Date(report.startDate), now)
-        );
-        
-        if (!existingReport) {
-          // Get the current month range
-          const monthStart = startOfMonth(now);
-          const monthEnd = endOfMonth(now);
-          
-          // Filter moods for this month
-          const monthlyMoods = moods.filter(mood => {
-            const moodDate = new Date(mood.timestamp);
-            return moodDate >= monthStart && moodDate <= monthEnd;
-          });
-          
-          if (monthlyMoods.length > 0) {
-            // Calculate statistics
-            const scores = monthlyMoods.map(m => MOOD_CONFIGS[m.mood].score);
-            const minScore = Math.min(...scores);
-            const maxScore = Math.max(...scores);
-            const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-            
-            // Create new report
-            const newReport: MoodReport = {
-              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-              type: 'monthly',
-              startDate: monthStart,
-              endDate: monthEnd,
-              minScore: parseFloat(minScore.toFixed(1)),
-              maxScore: parseFloat(maxScore.toFixed(1)),
-              avgScore: parseFloat(avgScore.toFixed(1)),
-              userId: user.id,
-              createdAt: Date.now()
-            };
-            
-            const updatedReports = [newReport, ...monthlyReports];
-            setMonthlyReports(updatedReports);
-            saveMonthlyReports(updatedReports);
-          }
-        }
-      }
-    };
-
-    // Run once on mount
-    generateMonthlyReportIfNeeded();
-
-    // Check every hour
-    const interval = setInterval(generateMonthlyReportIfNeeded, 60 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, [user, moods, monthlyReports]);
-
   const saveWeeklyReports = useCallback((reports: MoodReport[]) => {
     if (!user) return;
     
@@ -214,6 +126,170 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.error("Failed to save monthly reports", e);
     }
   }, [user]);
+
+  // Generate Weekly Report Logic
+  const generateWeeklyReport = useCallback((date: Date, currentReports: MoodReport[]) => {
+    if (!user) return null;
+
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Monday
+    const weekEnd = endOfWeek(date, { weekStartsOn: 1 }); // Sunday
+    
+    // Check if report already exists for this week
+    const existingReport = currentReports.find(report => 
+      isSameWeek(new Date(report.startDate), date, { weekStartsOn: 1 })
+    );
+
+    if (existingReport) return null;
+
+    // Filter moods for this week
+    const weeklyMoods = moods.filter(mood => {
+      const moodDate = new Date(mood.timestamp);
+      return moodDate >= weekStart && moodDate <= weekEnd;
+    });
+    
+    if (weeklyMoods.length > 0) {
+      const scores = weeklyMoods.map(m => MOOD_CONFIGS[m.mood].score);
+      const minScore = Math.min(...scores);
+      const maxScore = Math.max(...scores);
+      const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const { moodCounts, topMood, totalEntries } = calculateMoodStats(weeklyMoods);
+      
+      const newReport: MoodReport = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        type: 'weekly',
+        startDate: weekStart,
+        endDate: weekEnd,
+        minScore: parseFloat(minScore.toFixed(1)),
+        maxScore: parseFloat(maxScore.toFixed(1)),
+        avgScore: parseFloat(avgScore.toFixed(1)),
+        userId: user.id,
+        createdAt: Date.now(),
+        totalEntries,
+        topMood,
+        moodCounts
+      };
+      
+      return newReport;
+    }
+    return null;
+  }, [user, moods]);
+
+  // Generate Monthly Report Logic
+  const generateMonthlyReport = useCallback((date: Date, currentReports: MoodReport[]) => {
+    if (!user) return null;
+
+    const monthStart = startOfMonth(date);
+    const monthEnd = endOfMonth(date);
+    
+    // Check if report already exists for this month
+    const existingReport = currentReports.find(report => 
+      isSameMonth(new Date(report.startDate), date)
+    );
+
+    if (existingReport) return null;
+
+    // Filter moods for this month
+    const monthlyMoods = moods.filter(mood => {
+      const moodDate = new Date(mood.timestamp);
+      return moodDate >= monthStart && moodDate <= monthEnd;
+    });
+    
+    if (monthlyMoods.length > 0) {
+      const scores = monthlyMoods.map(m => MOOD_CONFIGS[m.mood].score);
+      const minScore = Math.min(...scores);
+      const maxScore = Math.max(...scores);
+      const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const { moodCounts, topMood, totalEntries } = calculateMoodStats(monthlyMoods);
+      
+      const newReport: MoodReport = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        type: 'monthly',
+        startDate: monthStart,
+        endDate: monthEnd,
+        minScore: parseFloat(minScore.toFixed(1)),
+        maxScore: parseFloat(maxScore.toFixed(1)),
+        avgScore: parseFloat(avgScore.toFixed(1)),
+        userId: user.id,
+        createdAt: Date.now(),
+        totalEntries,
+        topMood,
+        moodCounts
+      };
+      
+      return newReport;
+    }
+    return null;
+  }, [user, moods]);
+
+
+  // Check and generate reports
+  useEffect(() => {
+    if (!user || moods.length === 0) return;
+
+    const checkAndGenerateReports = () => {
+      const now = new Date();
+      let newWeeklyReports: MoodReport[] = [];
+      let newMonthlyReports: MoodReport[] = [];
+
+      // 1. Check Previous Week (Catch-up)
+      // If we are past the end of last week, and no report exists, generate it.
+      // Last week's end is Sunday.
+      const lastWeekDate = subWeeks(now, 1);
+      const reportForLastWeek = generateWeeklyReport(lastWeekDate, weeklyReports);
+      if (reportForLastWeek) {
+        newWeeklyReports.push(reportForLastWeek);
+      }
+
+      // 2. Check Current Week
+      // If today is Sunday and past 12:00 PM
+      if (isSunday(now) && now.getHours() >= 12) {
+        const reportForThisWeek = generateWeeklyReport(now, [...weeklyReports, ...newWeeklyReports]);
+        if (reportForThisWeek) {
+          newWeeklyReports.push(reportForThisWeek);
+        }
+      }
+
+      // 3. Check Previous Month (Catch-up)
+      const lastMonthDate = subMonths(now, 1);
+      const reportForLastMonth = generateMonthlyReport(lastMonthDate, monthlyReports);
+      if (reportForLastMonth) {
+        newMonthlyReports.push(reportForLastMonth);
+      }
+
+      // 4. Check Current Month
+      // If today is last day of month and past 12:00 PM
+      if (isLastDayOfMonth(now) && now.getHours() >= 12) {
+        const reportForThisMonth = generateMonthlyReport(now, [...monthlyReports, ...newMonthlyReports]);
+        if (reportForThisMonth) {
+          newMonthlyReports.push(reportForThisMonth);
+        }
+      }
+
+      // Batch update state and storage
+      if (newWeeklyReports.length > 0) {
+        const updated = [...newWeeklyReports, ...weeklyReports];
+        // Remove duplicates by ID just in case
+        const unique = Array.from(new Map(updated.map(item => [item.id, item])).values());
+        setWeeklyReports(unique);
+        saveWeeklyReports(unique);
+      }
+
+      if (newMonthlyReports.length > 0) {
+        const updated = [...newMonthlyReports, ...monthlyReports];
+        const unique = Array.from(new Map(updated.map(item => [item.id, item])).values());
+        setMonthlyReports(unique);
+        saveMonthlyReports(unique);
+      }
+    };
+
+    // Run immediately
+    checkAndGenerateReports();
+
+    // Run every hour
+    const interval = setInterval(checkAndGenerateReports, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+
+  }, [user, moods, weeklyReports, monthlyReports, generateWeeklyReport, generateMonthlyReport, saveWeeklyReports, saveMonthlyReports]);
 
   const deleteWeeklyReport = useCallback((id: string) => {
     if (!user) return;
