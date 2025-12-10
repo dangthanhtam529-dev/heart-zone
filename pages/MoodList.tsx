@@ -2,12 +2,59 @@ import React, { useState, useMemo } from 'react';
 import { useMoodStore } from '../context/MoodContext';
 import { useReportStore } from '../context/ReportContext';
 import { useAuth } from '../context/AuthContext';
-import { Ghost, Calendar, Trash2, Heart, Star, Sparkles, Moon, Gift } from 'lucide-react';
+import { Ghost, Calendar, Trash2, Heart, Star, Sparkles, Moon, Gift, Hourglass, ChevronLeft, ChevronRight, Truck } from 'lucide-react';
 import { MoodCard } from '../components/MoodCard';
 import { LuckyBox } from '../components/LuckyBox';
+import { TimeCourier } from '../components/TimeCourier';
 import { Link } from 'react-router-dom';
 import { MoodType } from '../types';
 import { MOOD_CONFIGS } from '../constants';
+
+const ITEMS_PER_PAGE = 5;
+
+// Helper Component for Pagination
+const PaginationControls: React.FC<{
+  currentPage: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+}> = ({ currentPage, totalItems, onPageChange }) => {
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex justify-center items-center space-x-4 mt-8 animate-fade-in">
+      <button
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={currentPage === 1}
+        className={`p-2 rounded-full transition-colors ${
+          currentPage === 1 
+            ? 'text-stone-300 cursor-not-allowed' 
+            : 'text-stone-500 hover:bg-stone-100 hover:text-orange-500'
+        }`}
+      >
+        <ChevronLeft size={20} />
+      </button>
+      
+      <span className="text-sm font-medium text-stone-500">
+        {currentPage} / {totalPages}
+      </span>
+      
+      <button
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage === totalPages}
+        className={`p-2 rounded-full transition-colors ${
+          currentPage === totalPages 
+            ? 'text-stone-300 cursor-not-allowed' 
+            : 'text-stone-500 hover:bg-stone-100 hover:text-orange-500'
+        }`}
+      >
+        <ChevronRight size={20} />
+      </button>
+    </div>
+  );
+};
+
 
 // Helper function to calculate week number in month
 const getWeekNumberInMonth = (date: Date) => {
@@ -208,7 +255,30 @@ export const MoodList: React.FC = () => {
     deleteMonthlyReport 
   } = useReportStore();
   
-  const [activeTab, setActiveTab] = useState<'cards' | 'weekly' | 'monthly' | 'heartsea' | 'luckybox' | null>(null);
+  const [activeTab, setActiveTab] = useState<'cards' | 'weekly' | 'monthly' | 'heartsea' | 'luckybox' | 'courier' | null>(null);
+  
+  // Pagination States
+  const [moodPage, setMoodPage] = useState(1);
+  const [weekPage, setWeekPage] = useState(1);
+  const [monthPage, setMonthPage] = useState(1);
+
+  const handleTabClick = (tab: typeof activeTab) => {
+    if (activeTab === tab) {
+      setActiveTab(null);
+    } else {
+      setActiveTab(tab);
+      // Reset pagination on tab switch
+      if (tab === 'cards') setMoodPage(1);
+      if (tab === 'weekly') setWeekPage(1);
+      if (tab === 'monthly') setMonthPage(1);
+    }
+  };
+
+  // Pagination Helpers
+  const getPaginatedData = (data: any[], page: number) => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return data.slice(start, start + ITEMS_PER_PAGE);
+  };
 
   return (
     <div className="p-6 pt-12 min-h-screen">
@@ -221,146 +291,212 @@ export const MoodList: React.FC = () => {
             {activeTab === 'monthly' && `共 ${monthlyReports.length} 份月报`}
             {activeTab === 'heartsea' && `心海 · 繁星`}
             {activeTab === 'luckybox' && `每日幸运`}
+            {activeTab === 'courier' && `时光快递`}
           </p>
         </div>
       </header>
 
       {/* 功能标签 */}
       <div className="space-y-3 mb-6">
-        <button 
-          onClick={() => setActiveTab('cards')}
-          className={`w-full text-left p-4 rounded-2xl transition-all ${
-            activeTab === 'cards' 
-              ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
-              : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
-          }`}
-        >
-          心情卡片管理
-        </button>
+        {(!activeTab || activeTab === 'cards') && (
+          <button 
+            onClick={() => handleTabClick('cards')}
+            className={`w-full text-left p-4 rounded-2xl transition-all ${
+              activeTab === 'cards' 
+                ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
+                : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            心情卡片管理
+          </button>
+        )}
         
-        <button 
-          onClick={() => setActiveTab('weekly')}
-          className={`w-full text-left p-4 rounded-2xl transition-all ${
-            activeTab === 'weekly' 
-              ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
-              : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
-          }`}
-        >
-          心情周报
-        </button>
+        {activeTab === 'cards' && (
+          <div className="animate-fade-in mt-4 mb-8">
+            {moods.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[30vh] text-stone-400">
+                <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
+                  <Ghost size={56} strokeWidth={1.5} />
+                </div>
+                <p className="mb-6 text-lg font-medium text-stone-500">这里还是一片荒原</p>
+                <Link to="/" className="bg-white border border-stone-200 px-6 py-2.5 rounded-xl text-stone-600 font-medium hover:border-orange-300 hover:text-orange-500 transition-all shadow-sm">
+                  去种下第一颗种子
+                </Link>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {getPaginatedData(moods, moodPage).map((mood) => (
+                    <MoodCard key={mood.id} entry={mood} onDelete={deleteMood} />
+                  ))}
+                </div>
+                <PaginationControls 
+                  currentPage={moodPage} 
+                  totalItems={moods.length} 
+                  onPageChange={setMoodPage} 
+                />
+              </>
+            )}
+          </div>
+        )}
         
-        <button 
-          onClick={() => setActiveTab('monthly')}
-          className={`w-full text-left p-4 rounded-2xl transition-all ${
-            activeTab === 'monthly' 
-              ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
-              : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
-          }`}
-        >
-          心情月报
-        </button>
+        {(!activeTab || activeTab === 'weekly') && (
+          <button 
+            onClick={() => handleTabClick('weekly')}
+            className={`w-full text-left p-4 rounded-2xl transition-all ${
+              activeTab === 'weekly' 
+                ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
+                : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            心情周报
+          </button>
+        )}
 
-        <button 
-          onClick={() => setActiveTab('heartsea')}
-          className={`w-full text-left p-4 rounded-2xl transition-all ${
-            activeTab === 'heartsea' 
-              ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
-              : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
-          }`}
-        >
-          心海
-        </button>
+        {activeTab === 'weekly' && (
+          <div className="animate-fade-in mt-4 mb-8">
+            {weeklyReports.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[30vh] text-stone-400">
+                 <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
+                  <Calendar size={56} strokeWidth={1.5} />
+                </div>
+                <p className="text-lg font-medium text-stone-500">暂无周报</p>
+                <p className="text-sm text-stone-400 mt-2">每周一将自动生成上周的心情报告</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {getPaginatedData(
+                    [...weeklyReports].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
+                    weekPage
+                  ).map((report) => (
+                    <ReportCard 
+                      key={report.id}
+                      report={report}
+                      title={`第${getWeekNumberInMonth(new Date(report.startDate))}周心情报告`}
+                      onDelete={() => deleteWeeklyReport(report.id)}
+                    />
+                  ))}
+                </div>
+                <PaginationControls 
+                  currentPage={weekPage} 
+                  totalItems={weeklyReports.length} 
+                  onPageChange={setWeekPage} 
+                />
+              </>
+            )}
+          </div>
+        )}
+        
+        {(!activeTab || activeTab === 'monthly') && (
+          <button 
+            onClick={() => handleTabClick('monthly')}
+            className={`w-full text-left p-4 rounded-2xl transition-all ${
+              activeTab === 'monthly' 
+                ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
+                : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            心情月报
+          </button>
+        )}
 
-        <button 
-          onClick={() => setActiveTab('luckybox')}
-          className={`w-full text-left p-4 rounded-2xl transition-all flex items-center ${
-            activeTab === 'luckybox' 
-              ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
-              : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
-          }`}
-        >
-          <Gift size={18} className="mr-2 opacity-80" />
-          每日盲盒
-        </button>
+        {activeTab === 'monthly' && (
+          <div className="animate-fade-in mt-4 mb-8">
+            {monthlyReports.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[30vh] text-stone-400">
+                 <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
+                  <Calendar size={56} strokeWidth={1.5} />
+                </div>
+                <p className="text-lg font-medium text-stone-500">暂无月报</p>
+                <p className="text-sm text-stone-400 mt-2">每月1日将自动生成上月的心情报告</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {getPaginatedData(
+                    [...monthlyReports].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
+                    monthPage
+                  ).map((report) => (
+                    <ReportCard 
+                      key={report.id}
+                      report={report}
+                      title={`${new Date(report.startDate).getMonth() + 1}月心情报告`}
+                      onDelete={() => deleteMonthlyReport(report.id)}
+                    />
+                  ))}
+                </div>
+                <PaginationControls 
+                  currentPage={monthPage} 
+                  totalItems={monthlyReports.length} 
+                  onPageChange={setMonthPage} 
+                />
+              </>
+            )}
+          </div>
+        )}
+
+        {(!activeTab || activeTab === 'heartsea') && (
+          <button 
+            onClick={() => handleTabClick('heartsea')}
+            className={`w-full text-left p-4 rounded-2xl transition-all ${
+              activeTab === 'heartsea' 
+                ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
+                : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            心海
+          </button>
+        )}
+
+        {activeTab === 'heartsea' && (
+          <div className="animate-fade-in mt-4 mb-8">
+            <HeartSea moods={moods} />
+          </div>
+        )}
+
+        {(!activeTab || activeTab === 'luckybox') && (
+          <button 
+            onClick={() => handleTabClick('luckybox')}
+            className={`w-full text-left p-4 rounded-2xl transition-all flex items-center ${
+              activeTab === 'luckybox' 
+                ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
+                : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            <Gift size={18} className="mr-2 opacity-80" />
+            每日盲盒
+          </button>
+        )}
+
+        {activeTab === 'luckybox' && (
+          <div className="animate-fade-in mt-4 mb-8">
+            <LuckyBox />
+          </div>
+        )}
+
+        {(!activeTab || activeTab === 'courier') && (
+          <button 
+            onClick={() => handleTabClick('courier')}
+            className={`w-full text-left p-4 rounded-2xl transition-all flex items-center ${
+              activeTab === 'courier' 
+                ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
+                : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            <Truck size={18} className="mr-2 opacity-80" />
+            时光快递
+          </button>
+        )}
+
+        {activeTab === 'courier' && (
+          <div className="animate-fade-in mt-4 mb-8">
+            <TimeCourier />
+          </div>
+        )}
       </div>
 
-      {activeTab === 'cards' && (
-        moods.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[50vh] text-stone-400 animate-fade-in">
-            <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
-              <Ghost size={56} strokeWidth={1.5} />
-            </div>
-            <p className="mb-6 text-lg font-medium text-stone-500">这里还是一片荒原</p>
-            <Link to="/" className="bg-white border border-stone-200 px-6 py-2.5 rounded-xl text-stone-600 font-medium hover:border-orange-300 hover:text-orange-500 transition-all shadow-sm">
-              去种下第一颗种子
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-4 animate-fade-in pb-20">
-            {moods.map((mood) => (
-              <MoodCard key={mood.id} entry={mood} onDelete={deleteMood} />
-            ))}
-          </div>
-        )
-      )}
-
-      {activeTab === 'weekly' && (
-        <div className="space-y-4 animate-fade-in pb-20">
-          {weeklyReports.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[50vh] text-stone-400">
-               <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
-                <Calendar size={56} strokeWidth={1.5} />
-              </div>
-              <p className="text-lg font-medium text-stone-500">暂无周报</p>
-              <p className="text-sm text-stone-400 mt-2">每周一将自动生成上周的心情报告</p>
-            </div>
-          ) : (
-            [...weeklyReports]
-              .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-              .map((report) => (
-                <ReportCard 
-                  key={report.id}
-                  report={report}
-                  title={`第${getWeekNumberInMonth(new Date(report.startDate))}周心情报告`}
-                  onDelete={() => deleteWeeklyReport(report.id)}
-                />
-              ))
-          )}
-        </div>
-      )}
-
-      {activeTab === 'monthly' && (
-        <div className="space-y-4 animate-fade-in pb-20">
-          {monthlyReports.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[50vh] text-stone-400">
-               <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
-                <Calendar size={56} strokeWidth={1.5} />
-              </div>
-              <p className="text-lg font-medium text-stone-500">暂无月报</p>
-              <p className="text-sm text-stone-400 mt-2">每月1日将自动生成上月的心情报告</p>
-            </div>
-          ) : (
-            [...monthlyReports]
-              .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-              .map((report) => (
-                <ReportCard 
-                  key={report.id}
-                  report={report}
-                  title={`${new Date(report.startDate).getMonth() + 1}月心情报告`}
-                  onDelete={() => deleteMonthlyReport(report.id)}
-                />
-              ))
-          )}
-        </div>
-      )}
-
-      {activeTab === 'heartsea' && (
-        <HeartSea moods={moods} />
-      )}
-
-      {activeTab === 'luckybox' && (
-        <LuckyBox />
-      )}
     </div>
   );
 };
+

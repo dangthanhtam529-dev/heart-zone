@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Gift, Sparkles, X } from 'lucide-react';
+import { Mail, Gift, Sparkles, X, Snowflake } from 'lucide-react';
 
-const LUCKY_NOTES = [
-  "生活原本沉闷，但跑起来就有风。",
-  "保持热爱，奔赴山海。",
-  "你通过了昨天的考验，今天的奖励是开心一整天。",
-  "别慌，月亮也正在大海某处迷茫。",
-  "允许一切发生，生活自有安排。",
-  "慢慢理解世界，慢慢更新自己。",
-  "不仅要看远方的风景，也要看脚下的路。",
-  "好运正在路上，请保持期待。",
-  "今天的你，比昨天更棒了一点点。",
-  "记得给自己的生活加点糖。",
-  "万物皆有裂痕，那是光照进来的地方。",
-  "在这个星球上，你很重要，请借我你的光。",
-  "愿你眼里有光，心中有爱，目光所及皆是美好。",
-  "与其互为人间，不如自成宇宙。",
-  "每一个不曾起舞的日子，都是对生命的辜负。",
-  "温柔半两，从容一生。",
-  "所有的失去，都会以另一种方式归来。",
-  "你逆光而来，配得上这世间所有的好。",
-  "热爱可抵岁月漫长。",
-  "心中有暖，又何惧人生荒凉。"
+const WINTER_NOTES = [
+  "晚来天欲雪，能饮一杯无？——白居易《问刘十九》",
+  "墙角数枝梅，凌寒独自开。——王安石《梅》",
+  "孤舟蓑笠翁，独钓寒江雪。——柳宗元《江雪》",
+  "忽如一夜春风来，千树万树梨花开。——岑参《白雪歌送武判官归京》",
+  "柴门闻犬吠，风雪夜归人。——刘长卿《逢雪宿芙蓉山主人》",
+  "日暮苍山远，天寒白屋贫。——刘长卿《逢雪宿芙蓉山主人》",
+  "燕山雪花大如席，片片吹落轩辕台。——李白《北风行》",
+  "寒夜客来茶当酒，竹炉汤沸火初红。——杜磊《寒夜》",
+  "终南阴岭秀，积雪浮云端。——祖咏《终南望余雪》",
+  "不知近水花先发，疑是经冬雪未销。——张谓《早梅》",
+  "冬天来了，春天还会远吗？——雪莱",
+  "在这个寒冷的冬天，愿你拥有温暖的怀抱。",
+  "落雪的日子，最适合围炉煮茶，静待花开。",
+  "愿你的冬天，有暖阳，有热茶，有爱人的叮咛。",
+  "冬日暖阳，好运绵长。",
+  "所有的寒冷，都是为了积蓄春天的力量。",
+  "雪花是冬天的信笺，写满洁白的祝福。",
+  "瑞雪兆丰年，愿你来年事事顺心。",
+  "冬天的第一场雪，是给世界的情书。",
+  "愿你在这个冬天，遇见温暖的人和事。"
 ];
 
 export const LuckyBox: React.FC = () => {
@@ -55,7 +55,7 @@ export const LuckyBox: React.FC = () => {
       setShowAnimation(true);
       
       // Pick a random note
-      const randomNote = LUCKY_NOTES[Math.floor(Math.random() * LUCKY_NOTES.length)];
+      const randomNote = WINTER_NOTES[Math.floor(Math.random() * WINTER_NOTES.length)];
       setCurrentNote(randomNote);
       setIsOpen(true);
       
@@ -73,20 +73,22 @@ export const LuckyBox: React.FC = () => {
 
   return (
     <div className="animate-fade-in pb-20">
-      {/* Header Card */}
-      <div className="bg-gradient-to-r from-rose-400 to-orange-400 rounded-3xl p-6 mb-8 text-white relative overflow-hidden shadow-lg shadow-rose-200">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-yellow-300 opacity-20 rounded-full blur-xl -ml-5 -mb-5"></div>
+      {/* Header Card - Winter Theme */}
+      <div className="bg-gradient-to-r from-sky-400 to-blue-500 rounded-3xl p-6 mb-8 text-white relative overflow-hidden shadow-lg shadow-sky-200">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-20 rounded-full blur-2xl -mr-10 -mt-10"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-200 opacity-20 rounded-full blur-xl -ml-5 -mb-5"></div>
+        <div className="absolute top-4 left-1/4 animate-pulse opacity-50"><Snowflake size={16} /></div>
+        <div className="absolute bottom-8 right-1/4 animate-bounce opacity-40 animation-delay-1000"><Snowflake size={20} /></div>
         
         <div className="relative z-10">
           <h2 className="text-2xl font-bold mb-2 flex items-center">
-            <Gift className="mr-2 text-yellow-100" size={24} />
-            每日盲盒
+            <Gift className="mr-2 text-sky-100" size={24} />
+            冬日限定盲盒
           </h2>
-          <p className="text-rose-50 text-sm opacity-90">
-            在这个小小的信箱里，藏着给你的每日惊喜。
+          <p className="text-sky-50 text-sm opacity-95">
+            在这个寒冷的季节，为你寄来一份冬日的诗意。
             <br/>
-            愿这张小纸条，能温暖你的今天。
+            愿这句诗词，能温暖你的凛冬。
           </p>
         </div>
       </div>
@@ -94,8 +96,8 @@ export const LuckyBox: React.FC = () => {
       {/* Main Interaction Area */}
       <div className="flex flex-col items-center justify-center min-h-[400px] relative">
         
-        {/* Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-b from-orange-50/50 to-white rounded-[40px] -z-10"></div>
+        {/* Background Elements - Winter Theme */}
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-50/50 to-white rounded-[40px] -z-10 border border-sky-100/50"></div>
         
         {!isOpen ? (
           // Closed State
@@ -103,16 +105,16 @@ export const LuckyBox: React.FC = () => {
             className={`cursor-pointer group relative ${isShaking ? 'animate-shake' : 'animate-bounce-slow'}`}
             onClick={handleOpen}
           >
-            <div className="w-48 h-48 bg-white rounded-[40px] shadow-[0_10px_40px_rgba(251,146,60,0.2)] flex items-center justify-center border-4 border-orange-100 transition-transform group-hover:scale-105 group-hover:shadow-[0_20px_60px_rgba(251,146,60,0.3)]">
-              <Mail size={80} className="text-orange-400 fill-orange-50" strokeWidth={1.5} />
+            <div className="w-48 h-48 bg-white rounded-[40px] shadow-[0_10px_40px_rgba(56,189,248,0.2)] flex items-center justify-center border-4 border-sky-100 transition-transform group-hover:scale-105 group-hover:shadow-[0_20px_60px_rgba(56,189,248,0.3)]">
+              <Mail size={80} className="text-sky-400 fill-sky-50" strokeWidth={1.5} />
               
               {/* Decoration */}
-              <div className="absolute -top-4 -right-4 bg-yellow-400 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transform rotate-12">
+              <div className="absolute -top-4 -right-4 bg-blue-400 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transform rotate-12">
                 点我开启
               </div>
             </div>
             <p className="text-center mt-8 text-stone-500 font-medium tracking-wide">
-              点击抽取今日幸运签
+              点击抽取今日冬日签
             </p>
           </div>
         ) : (
@@ -121,28 +123,28 @@ export const LuckyBox: React.FC = () => {
             {/* The Note Card */}
             <div className="bg-white rounded-[32px] p-8 shadow-[0_10px_50px_rgba(0,0,0,0.05)] border border-stone-100 relative overflow-hidden">
               {/* Decorative Quote Marks */}
-              <div className="absolute top-4 left-6 text-6xl text-orange-100 font-serif leading-none">“</div>
-              <div className="absolute bottom-4 right-6 text-6xl text-orange-100 font-serif leading-none rotate-180">“</div>
+              <div className="absolute top-4 left-6 text-6xl text-sky-100 font-serif leading-none">“</div>
+              <div className="absolute bottom-4 right-6 text-6xl text-sky-100 font-serif leading-none rotate-180">“</div>
               
               <div className="relative z-10 flex flex-col items-center text-center py-6">
-                <div className="mb-6 bg-orange-50 p-4 rounded-full">
-                  <Sparkles className="text-orange-400" size={32} />
+                <div className="mb-6 bg-sky-50 p-4 rounded-full">
+                  <Sparkles className="text-sky-400" size={32} />
                 </div>
                 
-                <h3 className="text-lg font-bold text-stone-800 mb-6">今日幸运签</h3>
+                <h3 className="text-lg font-bold text-stone-800 mb-6">今日冬日签</h3>
                 
                 <p className="text-xl text-stone-600 font-medium leading-relaxed font-serif mb-8 px-4">
                   {currentNote}
                 </p>
                 
                 <div className="text-xs text-stone-400 tracking-widest uppercase">
-                  HEART ZONE DAILY
+                  HEART ZONE WINTER
                 </div>
               </div>
 
               {/* Top/Bottom Decoration Lines */}
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-rose-300 to-orange-300"></div>
-              <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-orange-300 to-rose-300"></div>
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-300 to-sky-300"></div>
+              <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-sky-300 to-blue-300"></div>
             </div>
             
             <p className="text-center mt-8 text-stone-400 text-sm">
@@ -154,7 +156,7 @@ export const LuckyBox: React.FC = () => {
         {/* Animation Particles (Simple CSS implementation or simplified here) */}
         {showAnimation && (
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-            <div className="w-full h-full animate-ping bg-orange-100 rounded-full opacity-20"></div>
+            <div className="w-full h-full animate-ping bg-sky-100 rounded-full opacity-20"></div>
           </div>
         )}
       </div>
