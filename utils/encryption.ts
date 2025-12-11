@@ -87,12 +87,12 @@ export class SecureStorage {
   static clearAllSecureData(): void {
     const secureKeys = [
       'heartspace_users_db',
-      'heartspace_moods_db',
-      'heartspace_weekly_reports_db',
-      'heartspace_monthly_reports_db',
+      'heartspace_moods_db', 
+      'heartspace_weekly_reports',
+      'heartspace_monthly_reports',
       'heartspace_lucky_date',
       'heartspace_lucky_note',
-      'heartspace_time_courier_packages'
+      'heartspace_courier_packages'
     ];
 
     secureKeys.forEach(key => {

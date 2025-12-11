@@ -25,11 +25,11 @@ export const LuckyBox: React.FC = () => {
 
   useEffect(() => {
     // Check if user has already drawn today
-    const lastDrawnDate = localStorage.getItem('heartspace_lucky_date');
+    const lastDrawnDate = SecureStorage.getItem('heartspace_lucky_date');
     const today = new Date().toDateString();
 
     if (lastDrawnDate === today) {
-      const savedNote = localStorage.getItem('heartspace_lucky_note');
+      const savedNote = SecureStorage.getItem('heartspace_lucky_note');
       if (savedNote) {
         setCurrentNote(savedNote);
         setIsOpen(true);
@@ -52,10 +52,10 @@ export const LuckyBox: React.FC = () => {
       setCurrentNote(randomNote);
       setIsOpen(true);
       
-      // Save to localStorage
+      // Save to secure localStorage
       const today = new Date().toDateString();
-      localStorage.setItem('heartspace_lucky_date', today);
-      localStorage.setItem('heartspace_lucky_note', randomNote);
+      SecureStorage.setItem('heartspace_lucky_date', today);
+      SecureStorage.setItem('heartspace_lucky_note', randomNote);
       
       // Hide opening animation after a bit
       setTimeout(() => {

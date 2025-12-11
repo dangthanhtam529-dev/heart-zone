@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Truck, Inbox, Clock, CheckCircle, X, Box, Stamp, ArrowRight, Gift } from 'lucide-react';
+import { SecureStorage } from '../utils/encryption';
 
 // 类型定义
 type PackageSize = 'small' | 'medium' | 'large';
@@ -57,9 +58,9 @@ export const TimeCourier: React.FC = () => {
 
   // 初始化加载与自动清理
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = SecureStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsedPackages: TimePackage[] = JSON.parse(saved);
+      const parsedPackages: TimePackage[] = saved;
       const now = Date.now();
       const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
 
@@ -70,7 +71,7 @@ export const TimeCourier: React.FC = () => {
       });
 
       if (validPackages.length !== parsedPackages.length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(validPackages));
+        SecureStorage.setItem(STORAGE_KEY, validPackages);
       }
       setPackages(validPackages);
     }
@@ -93,7 +94,7 @@ export const TimeCourier: React.FC = () => {
 
       const updatedPackages = [...packages, newPackage];
       setPackages(updatedPackages);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPackages));
+      SecureStorage.setItem(STORAGE_KEY, updatedPackages);
       
       // 重置状态
       setContent('');
@@ -111,7 +112,7 @@ export const TimeCourier: React.FC = () => {
       return p;
     });
     setPackages(updatedPackages);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPackages));
+    SecureStorage.setItem(STORAGE_KEY, updatedPackages);
     setViewingPackage({ ...pkg, receivedAt: Date.now() });
   };
 
