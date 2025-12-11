@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Gift, Sparkles, X, Snowflake } from 'lucide-react';
+import { SecureStorage } from '../utils/encryption';
 
 const WINTER_NOTES = [
   "晚来天欲雪，能饮一杯无？——白居易《问刘十九》",
@@ -12,7 +13,6 @@ const WINTER_NOTES = [
   "寒夜客来茶当酒，竹炉汤沸火初红。——杜磊《寒夜》",
   "终南阴岭秀，积雪浮云端。——祖咏《终南望余雪》",
   "不知近水花先发，疑是经冬雪未销。——张谓《早梅》",
-  "冬天来了，春天还会远吗？——雪莱",
   "夜深知雪重，时闻折竹声。——白居易《夜雪》",
   "人生到处知何似，应似飞鸿踏雪泥。——苏轼《和子由渑池怀旧》"
 ];

@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { MoodEntry } from '../types';
 import { NEGATIVE_MOODS, POSITIVE_MOODS } from '../constants';
 import { useAuth } from './AuthContext';
+import { SecureStorage } from '../utils/encryption';
 
 interface MoodContextType {
   moods: MoodEntry[];
@@ -34,8 +35,7 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await new Promise(resolve => setTimeout(resolve, 300));
     
     try {
-      const allMoodsJson = localStorage.getItem(DB_MOODS_KEY);
-      const allMoods: MoodEntry[] = allMoodsJson ? JSON.parse(allMoodsJson) : [];
+      const allMoods: MoodEntry[] = SecureStorage.getItem(DB_MOODS_KEY) || [];
       // Filter for current user
       const userMoods = allMoods.filter(m => m.userId === user.id);
       // Sort by timestamp desc
@@ -78,14 +78,13 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       // Save to LS
-      const allMoodsJson = localStorage.getItem(DB_MOODS_KEY);
-      let allMoods: MoodEntry[] = allMoodsJson ? JSON.parse(allMoodsJson) : [];
+      let allMoods: MoodEntry[] = SecureStorage.getItem(DB_MOODS_KEY) || [];
       
       // Clean up old entries to manage storage
       allMoods = cleanupOldEntries(allMoods, user.id);
       
       allMoods.push(newEntry);
-      localStorage.setItem(DB_MOODS_KEY, JSON.stringify(allMoods));
+      SecureStorage.setItem(DB_MOODS_KEY, allMoods);
 
       // Update State
       setMoods(prev => [newEntry, ...prev]);
@@ -120,10 +119,9 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteMood = useCallback(async (id: string) => {
     if (!user) return;
     
-    const allMoodsJson = localStorage.getItem(DB_MOODS_KEY);
-    let allMoods: MoodEntry[] = allMoodsJson ? JSON.parse(allMoodsJson) : [];
+    let allMoods: MoodEntry[] = SecureStorage.getItem(DB_MOODS_KEY) || [];
     allMoods = allMoods.filter(m => m.id !== id);
-    localStorage.setItem(DB_MOODS_KEY, JSON.stringify(allMoods));
+    SecureStorage.setItem(DB_MOODS_KEY, allMoods);
 
     setMoods(prev => prev.filter(m => m.id !== id));
   }, [user]);
@@ -145,11 +143,10 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearAllData = useCallback(() => {
      if(!user) return;
-     const allMoodsJson = localStorage.getItem(DB_MOODS_KEY);
-     const allMoods: MoodEntry[] = allMoodsJson ? JSON.parse(allMoodsJson) : [];
+     let allMoods: MoodEntry[] = SecureStorage.getItem(DB_MOODS_KEY) || [];
      // Keep other users' data
      const otherUserMoods = allMoods.filter(m => m.userId !== user.id);
-     localStorage.setItem(DB_MOODS_KEY, JSON.stringify(otherUserMoods));
+     SecureStorage.setItem(DB_MOODS_KEY, otherUserMoods);
      setMoods([]);
   }, [user]);
 

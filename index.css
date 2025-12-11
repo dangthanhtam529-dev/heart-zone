@@ -86,3 +86,26 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a29e;
 }
+
+/* 禁用移动端滑动切换页面 */
+html, body {
+  overscroll-behavior: none;
+  touch-action: pan-y;
+}
+
+* {
+  overscroll-behavior: none;
+}
+
+/* 禁用移动端手势导航 */
+@media (max-width: 768px) {
+  body {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* 防止侧滑返回 */
+  * {
+    touch-action: pan-y;
+  }
+}

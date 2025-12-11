@@ -3,6 +3,7 @@ import { MoodReport, MoodType } from '../types';
 import { useAuth } from './AuthContext';
 import { useMoodStore } from './MoodContext';
 import { MOOD_CONFIGS } from '../constants';
+import { SecureStorage } from '../utils/encryption';
 import { 
   startOfWeek, endOfWeek, startOfMonth, endOfMonth, 
   isSameWeek, isSameMonth, format, isSunday, isLastDayOfMonth,
@@ -64,14 +65,12 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     try {
       // Load weekly reports
-      const weeklyReportsJson = localStorage.getItem(DB_WEEKLY_REPORTS_KEY);
-      const allWeeklyReports: MoodReport[] = weeklyReportsJson ? JSON.parse(weeklyReportsJson) : [];
+      const allWeeklyReports: MoodReport[] = SecureStorage.getItem(DB_WEEKLY_REPORTS_KEY) || [];
       const userWeeklyReports = allWeeklyReports.filter(r => r.userId === user.id);
       setWeeklyReports(userWeeklyReports);
       
       // Load monthly reports
-      const monthlyReportsJson = localStorage.getItem(DB_MONTHLY_REPORTS_KEY);
-      const allMonthlyReports: MoodReport[] = monthlyReportsJson ? JSON.parse(monthlyReportsJson) : [];
+      const allMonthlyReports: MoodReport[] = SecureStorage.getItem(DB_MONTHLY_REPORTS_KEY) || [];
       const userMonthlyReports = allMonthlyReports.filter(r => r.userId === user.id);
       setMonthlyReports(userMonthlyReports);
     } catch (e) {
@@ -93,8 +92,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!user) return;
     
     try {
-      const allReportsJson = localStorage.getItem(DB_WEEKLY_REPORTS_KEY);
-      let allReports: MoodReport[] = allReportsJson ? JSON.parse(allReportsJson) : [];
+      let allReports: MoodReport[] = SecureStorage.getItem(DB_WEEKLY_REPORTS_KEY) || [];
       
       // Remove current user's reports
       allReports = allReports.filter(r => r.userId !== user.id);
@@ -102,7 +100,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Add updated reports
       allReports = [...allReports, ...reports];
       
-      localStorage.setItem(DB_WEEKLY_REPORTS_KEY, JSON.stringify(allReports));
+      SecureStorage.setItem(DB_WEEKLY_REPORTS_KEY, allReports);
     } catch (e) {
       console.error("Failed to save weekly reports", e);
     }
@@ -112,8 +110,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!user) return;
     
     try {
-      const allReportsJson = localStorage.getItem(DB_MONTHLY_REPORTS_KEY);
-      let allReports: MoodReport[] = allReportsJson ? JSON.parse(allReportsJson) : [];
+      let allReports: MoodReport[] = SecureStorage.getItem(DB_MONTHLY_REPORTS_KEY) || [];
       
       // Remove current user's reports
       allReports = allReports.filter(r => r.userId !== user.id);
@@ -121,7 +118,7 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Add updated reports
       allReports = [...allReports, ...reports];
       
-      localStorage.setItem(DB_MONTHLY_REPORTS_KEY, JSON.stringify(allReports));
+      SecureStorage.setItem(DB_MONTHLY_REPORTS_KEY, allReports);
     } catch (e) {
       console.error("Failed to save monthly reports", e);
     }

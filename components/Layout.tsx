@@ -16,7 +16,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   return (
     <div className="min-h-screen bg-[#fdfbf7] text-stone-800 font-sans selection:bg-orange-100">
-      <main className={`${!isAuthPage ? 'pb-24' : ''} max-w-md mx-auto min-h-screen relative bg-[#fdfbf7] sm:shadow-2xl sm:shadow-stone-200 sm:my-0 sm:border-x border-stone-100`}>
+      <main 
+        className={`${!isAuthPage ? 'pb-24' : ''} max-w-md mx-auto min-h-screen relative bg-[#fdfbf7] sm:shadow-2xl sm:shadow-stone-200 sm:my-0 sm:border-x border-stone-100`}
+        style={{ 
+          overscrollBehavior: 'none',
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
         {children}
       </main>
 
