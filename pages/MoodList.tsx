@@ -122,12 +122,11 @@ const ReportCard: React.FC<{
         {/* Detailed Feedback */}
         <div className="bg-orange-50/50 rounded-2xl p-4 border border-orange-100/50">
           <p className="text-stone-600 text-sm leading-relaxed">
-            {user?.username || '用户'}您好，
-            {report.avgScore >= 4.5 ? '这段时间您的状态棒极了！保持这份快乐的能量，继续闪闪发光吧✨' :
+            {report.content || `${user?.username || '用户'}您好，${report.avgScore >= 4.5 ? '这段时间您的状态棒极了！保持这份快乐的能量，继续闪闪发光吧✨' :
              report.avgScore >= 4.0 ? '这段时间过得很不错，虽然有小插曲，但整体是温暖而积极的🌻' :
              report.avgScore >= 3.0 ? '这段时间心情比较平稳，平平淡淡才是真，在平凡的日子里也要照顾好自己☕' :
              report.avgScore >= 2.0 ? '最近似乎有些疲惫，记得多给自己一些休息时间，不要太勉强自己🌙' :
-             '这段时间可能有些艰难，请允许自己难过一会儿，但别忘了，阴霾终会散去，我们都在陪着你🫂'}
+             '这段时间可能有些艰难，请允许自己难过一会儿，但别忘了，阴霾终会散去，我们都在陪着你🫂'}`}
           </p>
         </div>
       </div>
@@ -255,7 +254,18 @@ export const MoodList: React.FC = () => {
     deleteMonthlyReport 
   } = useReportStore();
   
-  const [activeTab, setActiveTab] = useState<'cards' | 'weekly' | 'monthly' | 'heartsea' | 'luckybox' | 'courier' | null>(null);
+  const [activeTab, setActiveTab] = useState<'cards' | 'briefing' | 'heartsea' | 'luckybox' | 'courier' | null>(null);
+  const [briefingType, setBriefingType] = useState<'weekly' | 'monthly'>('weekly');
+  
+  // 切换简报类型时重置分页
+  const handleBriefingTypeChange = (type: 'weekly' | 'monthly') => {
+    setBriefingType(type);
+    if (type === 'weekly') {
+      setWeekPage(1);
+    } else {
+      setMonthPage(1);
+    }
+  };
   
   // Pagination States
   const [moodPage, setMoodPage] = useState(1);
@@ -268,9 +278,10 @@ export const MoodList: React.FC = () => {
     } else {
       setActiveTab(tab);
       // Reset pagination on tab switch
-      if (tab === 'cards') setMoodPage(1);
-      if (tab === 'weekly') setWeekPage(1);
-      if (tab === 'monthly') setMonthPage(1);
+     if (tab === 'briefing') {
+        if (briefingType === 'weekly') setWeekPage(1);
+        else setMonthPage(1);
+      }
     }
   };
 
@@ -287,8 +298,7 @@ export const MoodList: React.FC = () => {
           <h1 className="text-3xl font-bold text-stone-800">心域足迹</h1>
           <p className="text-stone-500 text-sm mt-1">
             {activeTab === 'cards' && `共记录 ${moods.length} 次心情`}
-            {activeTab === 'weekly' && `共 ${weeklyReports.length} 份周报`}
-            {activeTab === 'monthly' && `共 ${monthlyReports.length} 份月报`}
+            {activeTab === 'briefing' && `共 ${briefingType === 'weekly' ? weeklyReports.length : monthlyReports.length} 份${briefingType === 'weekly' ? '周' : '月'}报`}
             {activeTab === 'heartsea' && `心海 · 繁星`}
             {activeTab === 'luckybox' && `每日幸运`}
             {activeTab === 'courier' && `时光快递`}
@@ -340,101 +350,114 @@ export const MoodList: React.FC = () => {
           </div>
         )}
         
-        {(!activeTab || activeTab === 'weekly') && (
+        {(!activeTab || activeTab === 'briefing') && (
           <button 
-            onClick={() => handleTabClick('weekly')}
+            onClick={() => handleTabClick('briefing')}
             className={`w-full text-left p-4 rounded-2xl transition-all ${
-              activeTab === 'weekly' 
+              activeTab === 'briefing' 
                 ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
                 : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
             }`}
           >
-            心情周报
+            心情简报
           </button>
         )}
 
-        {activeTab === 'weekly' && (
+        {activeTab === 'briefing' && (
           <div className="animate-fade-in mt-4 mb-8">
-            {weeklyReports.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-[30vh] text-stone-400">
-                 <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
-                  <Calendar size={56} strokeWidth={1.5} />
+            {/* 周报月报切换按钮 */}
+            <div className="flex bg-white rounded-2xl p-1 mb-6 border border-stone-100">
+              <button
+                onClick={() => handleBriefingTypeChange('weekly')}
+                className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-all ${
+                  briefingType === 'weekly'
+                    ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                    : 'text-stone-600 hover:text-orange-600'
+                }`}
+              >
+                周报
+              </button>
+              <button
+                onClick={() => handleBriefingTypeChange('monthly')}
+                className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-all ${
+                  briefingType === 'monthly'
+                    ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                    : 'text-stone-600 hover:text-orange-600'
+                }`}
+              >
+                月报
+              </button>
+            </div>
+            
+            {briefingType === 'weekly' ? (
+              weeklyReports.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[30vh] text-stone-400">
+                  <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
+                    <Calendar size={56} strokeWidth={1.5} />
+                  </div>
+                  <p className="text-lg font-medium text-stone-500">暂无周报</p>
+                  <p className="text-sm text-stone-400 mt-2">每周一将自动生成上周的心情报告</p>
                 </div>
-                <p className="text-lg font-medium text-stone-500">暂无周报</p>
-                <p className="text-sm text-stone-400 mt-2">每周一将自动生成上周的心情报告</p>
-              </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {getPaginatedData(
+                      [...weeklyReports].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
+                      weekPage
+                    ).map((report) => (
+                      <ReportCard 
+                        key={report.id}
+                        report={report}
+                        title={`第${getWeekNumberInMonth(new Date(report.startDate))}周心情报告`}
+                        onDelete={() => deleteWeeklyReport(report.id)}
+                      />
+                    ))}
+                  </div>
+                  <PaginationControls 
+                    currentPage={weekPage} 
+                    totalItems={weeklyReports.length} 
+                    onPageChange={setWeekPage} 
+                  />
+                </>
+              )
             ) : (
-              <>
-                <div className="space-y-4">
-                  {getPaginatedData(
-                    [...weeklyReports].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
-                    weekPage
-                  ).map((report) => (
-                    <ReportCard 
-                      key={report.id}
-                      report={report}
-                      title={`第${getWeekNumberInMonth(new Date(report.startDate))}周心情报告`}
-                      onDelete={() => deleteWeeklyReport(report.id)}
-                    />
-                  ))}
+              monthlyReports.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[30vh] text-stone-400">
+                  <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
+                    <Calendar size={56} strokeWidth={1.5} />
+                  </div>
+                  <p className="text-lg font-medium text-stone-500">暂无月报</p>
+                  <p className="text-sm text-stone-400 mt-2">每月1日将自动生成上月的心情报告</p>
                 </div>
-                <PaginationControls 
-                  currentPage={weekPage} 
-                  totalItems={weeklyReports.length} 
-                  onPageChange={setWeekPage} 
-                />
-              </>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {getPaginatedData(
+                      [...monthlyReports].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
+                      monthPage
+                    ).map((report) => (
+                      <ReportCard 
+                        key={report.id}
+                        report={report}
+                        title={`${new Date(report.startDate).getMonth() + 1}月心情报告`}
+                        onDelete={() => deleteMonthlyReport(report.id)}
+                      />
+                    ))}
+                  </div>
+                  <PaginationControls 
+                    currentPage={monthPage}
+                    totalItems={monthlyReports.length}
+                    onPageChange={setMonthPage}
+                  />
+                </>
+              )
             )}
           </div>
         )}
         
-        {(!activeTab || activeTab === 'monthly') && (
-          <button 
-            onClick={() => handleTabClick('monthly')}
-            className={`w-full text-left p-4 rounded-2xl transition-all ${
-              activeTab === 'monthly' 
-                ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
-                : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
-            }`}
-          >
-            心情月报
-          </button>
-        )}
 
-        {activeTab === 'monthly' && (
-          <div className="animate-fade-in mt-4 mb-8">
-            {monthlyReports.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-[30vh] text-stone-400">
-                 <div className="bg-stone-100 p-8 rounded-full mb-6 text-stone-300">
-                  <Calendar size={56} strokeWidth={1.5} />
-                </div>
-                <p className="text-lg font-medium text-stone-500">暂无月报</p>
-                <p className="text-sm text-stone-400 mt-2">每月1日将自动生成上月的心情报告</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-4">
-                  {getPaginatedData(
-                    [...monthlyReports].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
-                    monthPage
-                  ).map((report) => (
-                    <ReportCard 
-                      key={report.id}
-                      report={report}
-                      title={`${new Date(report.startDate).getMonth() + 1}月心情报告`}
-                      onDelete={() => deleteMonthlyReport(report.id)}
-                    />
-                  ))}
-                </div>
-                <PaginationControls 
-                  currentPage={monthPage} 
-                  totalItems={monthlyReports.length} 
-                  onPageChange={setMonthPage} 
-                />
-              </>
-            )}
-          </div>
-        )}
+
+
 
         {(!activeTab || activeTab === 'heartsea') && (
           <button 

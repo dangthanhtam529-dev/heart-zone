@@ -48,4 +48,5 @@ export interface MoodReport {
   totalEntries: number; // 总记录数
   topMood: MoodType | null; // 出现次数最多的心情
   moodCounts: Record<MoodType, number>; // 各心情计数
+  content?: string; // 个性化内容描述
 }

@@ -53,6 +53,188 @@ const calculateMoodStats = (moods: any[]) => {
   return { moodCounts, topMood, totalEntries: moods.length };
 };
 
+// 智能周报内容生成器
+const generatePersonalizedWeeklyContent = (
+  avgScore: number,
+  topMood: MoodType | null,
+  moodCounts: Record<MoodType, number>,
+  totalEntries: number,
+  username: string
+): string => {
+  
+  // 计算各种情绪占比
+  const positiveCount = moodCounts[MoodType.HAPPY] + moodCounts[MoodType.CALM];
+  const negativeCount = moodCounts[MoodType.TIRED] + moodCounts[MoodType.SAD] + moodCounts[MoodType.ANNOYED];
+  const neutralCount = moodCounts[MoodType.NEUTRAL];
+  
+  const positiveRatio = totalEntries > 0 ? (positiveCount / totalEntries) * 100 : 0;
+  const negativeRatio = totalEntries > 0 ? (negativeCount / totalEntries) * 100 : 0;
+  const neutralRatio = totalEntries > 0 ? (neutralCount / totalEntries) * 100 : 0;
+  
+  // 根据主导情绪和平均分生成个性化内容
+  const contentTemplates = {
+    highEnergy: [
+      `${username}，这周您的状态像阳光一样灿烂！${moodCounts[MoodType.HAPPY]}次开心记录让您整个人都散发着温暖的光芒。`,
+      `太棒了！这周您有${positiveRatio.toFixed(0)}%的时间都保持着积极心态，这种正能量会感染身边的每一个人。`,
+      `${moodCounts[MoodType.HAPPY]}次开心的记录，就像${moodCounts[MoodType.HAPPY]}颗星星点亮了您的生活，继续保持这份美好的心情吧！`
+    ],
+    balanced: [
+      `${username}，这周您的心情比较平稳，就像湖面上的小舟，虽有微风但不失方向。`,
+      `${totalEntries}次记录中，${positiveRatio.toFixed(0)}%是积极情绪，${neutralRatio.toFixed(0)}%是中性状态，这种平衡感本身就是一种智慧。`,
+      `生活就像调色盘，这周您用${Object.keys(moodCounts).filter(mood => moodCounts[mood as MoodType] > 0).length}种不同的情绪色彩，绘制出了属于自己的独特画卷。`
+    ],
+    challenging: [
+      `${username}，这周可能有些艰难，但您依然坚持记录心情，这份自我觉察的勇气值得赞赏。`,
+      `${negativeRatio.toFixed(0)}%的时间感到低落，但请记住，情绪就像天气，阴云终将散去，阳光总会到来。`,
+      `这周${moodCounts[MoodType.SAD] || 0}次难过，${moodCounts[MoodType.TIRED] || 0}次疲惫，但每一次记录都是对自己的关爱，这就是成长的痕迹。`
+    ],
+    mixed: [
+      `${username}，这周您经历了情绪的过山车，从高到低，从平静到激动，这种丰富的情感体验让生活更加真实。`,
+      `${positiveRatio.toFixed(0)}%的积极时光，${negativeRatio.toFixed(0)}%的挑战时刻，${neutralRatio.toFixed(0)}%的平静时光，这就是生活的真实写照。`,
+      `这周的情绪变化就像心电图，有高峰也有低谷，但正是这样的波动证明了您鲜活的生命力。`
+    ]
+  };
+  
+  // 根据数据选择合适的内容类型
+  let contentType = 'mixed';
+  
+  if (positiveRatio >= 70) {
+    contentType = 'highEnergy';
+  } else if (negativeRatio >= 60) {
+    contentType = 'challenging';
+  } else if (Math.abs(positiveRatio - negativeRatio) <= 20 && neutralRatio >= 30) {
+    contentType = 'balanced';
+  }
+  
+  // 根据主导情绪进一步个性化
+  if (topMood) {
+    const topMoodSpecific = {
+      [MoodType.HAPPY]: `开心是您这周的主旋律，就像阳光穿透云层，温暖而明亮。`,
+      [MoodType.CALM]: `平静是您这周的主调，如湖水般宁静，这种内心的平和是最珍贵的财富。`,
+      [MoodType.NEUTRAL]: `中性状态居多，就像人生的常态，平淡中蕴含着生活的真谛。`,
+      [MoodType.TIRED]: `疲惫感较多，提醒您需要更多休息，好好照顾自己是当下的重要任务。`,
+      [MoodType.SAD]: `难过情绪较多，但请记住表达悲伤也是勇气，您并不孤单。`,
+      [MoodType.ANNOYED]: `烦躁感时有出现，可能是压力的信号，找到适合自己的释放方式很重要。`
+    };
+    
+    const templates = contentTemplates[contentType as keyof typeof contentTemplates];
+    const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+    
+    return `${randomTemplate} ${topMoodSpecific[topMood]}`;
+  }
+  
+  const templates = contentTemplates[contentType as keyof typeof contentTemplates];
+  return templates[Math.floor(Math.random() * templates.length)];
+};
+
+// 智能月报内容生成器
+const generatePersonalizedMonthlyContent = (
+  avgScore: number,
+  topMood: MoodType | null,
+  moodCounts: Record<MoodType, number>,
+  totalEntries: number,
+  username: string
+): string => {
+  
+  const positiveCount = moodCounts[MoodType.HAPPY] + moodCounts[MoodType.CALM];
+  const negativeCount = moodCounts[MoodType.TIRED] + moodCounts[MoodType.SAD] + moodCounts[MoodType.ANNOYED];
+  const neutralCount = moodCounts[MoodType.NEUTRAL];
+  
+  const positiveRatio = totalEntries > 0 ? (positiveCount / totalEntries) * 100 : 0;
+  const negativeRatio = totalEntries > 0 ? (negativeCount / totalEntries) * 100 : 0;
+  const neutralRatio = totalEntries > 0 ? (neutralCount / totalEntries) * 100 : 0;
+  
+  // 月度深度分析
+  const mostFrequentMood = Object.entries(moodCounts)
+    .filter(([,count]) => count > 0)
+    .sort(([,a], [,b]) => b - a)[0];
+  
+  const moodTrend = avgScore >= 4 ? '积极' : avgScore >= 3 ? '平稳' : '挑战';
+  
+  // 计算情绪稳定性（标准差概念简化版）
+  const moodVariety = Object.values(moodCounts).filter(count => count > 0).length;
+  const stability = moodVariety <= 3 ? '稳定' : moodVariety <= 5 ? '适中' : '丰富';
+  
+  // 计算每周平均记录数
+  const avgWeeklyEntries = totalEntries > 0 ? Math.round(totalEntries / 4.3) : 0;
+  
+  const monthlyTemplates = {
+    excellent: [
+      `${username}，这个月您的心情如春日暖阳般灿烂！${moodCounts[MoodType.HAPPY]}次开心记录像${moodCounts[MoodType.HAPPY]}朵鲜花，为您的生活增添了无尽色彩。`,
+      `太棒了！这个月${positiveRatio.toFixed(0)}%的时间都充满正能量，您用${totalEntries}次记录证明了自己的心理韧性，这种阳光心态是最好的财富。`,
+      `数据显示这个月您以${MOOD_CONFIGS[mostFrequentMood[0] as MoodType].label}为主，这种持续的好状态就像找到了生活的金钥匙，愿这份美好一直延续下去。`
+    ],
+    positive: [
+      `${username}，这个月您用${positiveCount}次积极情绪，为生活谱写了温暖的乐章，就像夜空中最亮的星，指引着前进的方向。`,
+      `${totalEntries}次心情记录中，积极情绪占比${positiveRatio.toFixed(0)}%，这种乐观的态度就像春风化雨，滋润着每一天的生活。`,
+      `回顾这个月，${mostFrequentMood[1]}次${MOOD_CONFIGS[mostFrequentMood[0] as MoodType].label}情绪成为主旋律，您正在用自己的方式诠释着生活的美好。`
+    ],
+    balanced: [
+      `${username}，这个月您展现了难得的情绪平衡感，${neutralRatio.toFixed(0)}%的中性状态说明您学会了在纷繁复杂中保持内心的宁静。`,
+      `就像太极的阴阳平衡，这个月您经历了各种情绪却依然保持稳定，这种${stability}的情绪模式是成熟心智的体现。`,
+      `${totalEntries}次记录展现了您丰富的情感世界，从开心到平静，每一种情绪都是生活authentic的颜色，构成了独特的月度画卷。`
+    ],
+    growth: [
+      `${username}，这个月虽有挑战，但您用${totalEntries}次记录展现了面对困难的勇气，每一次自我觉察都是成长的见证。`,
+      `情绪趋势显示为${moodTrend}，但请记住，就像树木需要风雨才能扎根，这个月的${negativeRatio.toFixed(0)}%挑战时光也是生命的养分。`,
+      `这个月您经历了情绪的高低起伏，但正是这些经历让您更加了解自己，就像璞玉需要雕琢，您正在变得更加坚韧和睿智。`
+    ],
+    reflective: [
+      `${username}，这个月${avgWeeklyEntries}次的平均周记录频率，说明您对自我关怀的重视，这种坚持本身就是最美的风景。`,
+      `回望这一个月的${totalEntries}个瞬间，您会发现情绪就像月亮的阴晴圆缺，是自然的变化规律，而您学会了欣赏每一种状态。`,
+      `${mostFrequentMood[1]}次${MOOD_CONFIGS[mostFrequentMood[0] as MoodType].label}，${moodVariety}种不同情绪，这个月您用真实记录证明：接纳自己就是最大的成长。`
+    ]
+  };
+  
+  // 季节性分析（简化版）
+  const currentMonth = new Date().getMonth() + 1;
+  const seasonText = currentMonth >= 3 && currentMonth <= 5 ? '春天' : 
+                    currentMonth >= 6 && currentMonth <= 8 ? '夏天' : 
+                    currentMonth >= 9 && currentMonth <= 11 ? '秋天' : '冬天';
+  
+  // 选择合适的内容类型
+  let contentType = 'reflective';
+  
+  if (positiveRatio >= 70) {
+    contentType = 'excellent';
+  } else if (positiveRatio >= 55) {
+    contentType = 'positive';
+  } else if (Math.abs(positiveRatio - negativeRatio) <= 15 && neutralRatio >= 35) {
+    contentType = 'balanced';
+  } else if (negativeRatio >= 45) {
+    contentType = 'growth';
+  }
+  
+  // 添加季节性元素
+  const seasonalElements = {
+    spring: '就像春天的万物复苏，',
+    summer: '如同夏日的热情阳光，',
+    autumn: '恰似秋天的收获季节，',
+    winter: '正如冬日的宁静致远，'
+  };
+  
+  const templates = monthlyTemplates[contentType as keyof typeof monthlyTemplates];
+  let selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+  
+  // 根据记录频率添加个性化建议
+  let frequencyAdvice = '';
+  if (avgWeeklyEntries >= 10) {
+    frequencyAdvice = '您保持着高频的记录习惯，这种坚持让自我觉察成为了生活的一部分。';
+  } else if (avgWeeklyEntries >= 5) {
+    frequencyAdvice = '适中的记录频率让您既能关注内心，又不会感到负担，这是很好的平衡。';
+  } else if (totalEntries > 0) {
+    frequencyAdvice = '虽然记录不多，但每一次都是珍贵的自我对话，慢慢来会更好。';
+  }
+  
+  // 组合最终内容
+  selectedTemplate = `${seasonalElements[seasonText as keyof typeof seasonalElements]}${selectedTemplate}`;
+  if (frequencyAdvice && Math.random() > 0.5) { // 50%概率添加频率建议
+    selectedTemplate = `${selectedTemplate} ${frequencyAdvice}`;
+  }
+  
+  return selectedTemplate;
+};
+
 export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { moods } = useMoodStore();
@@ -151,6 +333,15 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
       const { moodCounts, topMood, totalEntries } = calculateMoodStats(weeklyMoods);
       
+      // 生成个性化周报内容
+      const personalizedContent = generatePersonalizedWeeklyContent(
+        avgScore,
+        topMood,
+        moodCounts,
+        totalEntries,
+        user.username || '用户'
+      );
+
       const newReport: MoodReport = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         type: 'weekly',
@@ -163,7 +354,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         createdAt: Date.now(),
         totalEntries,
         topMood,
-        moodCounts
+        moodCounts,
+        content: personalizedContent // 添加个性化内容
       };
       
       return newReport;
@@ -198,6 +390,15 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
       const { moodCounts, topMood, totalEntries } = calculateMoodStats(monthlyMoods);
       
+      // 生成个性化月报内容
+      const personalizedContent = generatePersonalizedMonthlyContent(
+        avgScore,
+        topMood,
+        moodCounts,
+        totalEntries,
+        user.username || '用户'
+      );
+
       const newReport: MoodReport = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         type: 'monthly',
@@ -210,7 +411,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         createdAt: Date.now(),
         totalEntries,
         topMood,
-        moodCounts
+        moodCounts,
+        content: personalizedContent // 添加个性化内容
       };
       
       return newReport;
