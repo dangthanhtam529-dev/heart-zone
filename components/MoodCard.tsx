@@ -56,6 +56,19 @@ export const MoodCard: React.FC<MoodCardProps> = ({ entry, onDelete }) => {
               {entry.note}
             </p>
           )}
+          
+          {entry.tags && entry.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {entry.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center px-2 py-1 bg-orange-50 text-orange-600 rounded-lg text-xs font-medium border border-orange-100"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </>

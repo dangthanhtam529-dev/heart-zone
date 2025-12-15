@@ -22,8 +22,21 @@ export const LuckyBox: React.FC = () => {
   const [currentNote, setCurrentNote] = useState<string | null>(null);
   const [isShaking, setIsShaking] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
+  const [availableNotes, setAvailableNotes] = useState<string[]>(WINTER_NOTES);
+  const [drawnNotes, setDrawnNotes] = useState<string[]>([]);
 
   useEffect(() => {
+    // Load previously drawn notes
+    const savedDrawnNotes = SecureStorage.getItem('heartspace_drawn_notes');
+    if (savedDrawnNotes) {
+      const parsedDrawnNotes = JSON.parse(savedDrawnNotes);
+      setDrawnNotes(parsedDrawnNotes);
+      
+      // Calculate available notes (not drawn yet)
+      const available = WINTER_NOTES.filter(note => !parsedDrawnNotes.includes(note));
+      setAvailableNotes(available);
+    }
+
     // Check if user has already drawn today
     const lastDrawnDate = SecureStorage.getItem('heartspace_lucky_date');
     const today = new Date().toDateString();
@@ -40,6 +53,19 @@ export const LuckyBox: React.FC = () => {
   const handleOpen = () => {
     if (isOpen) return;
 
+    // Check if all notes have been drawn
+    if (availableNotes.length === 0) {
+      // Reset the pool when all notes have been drawn
+      const resetDrawnNotes = [];
+      const resetAvailableNotes = [...WINTER_NOTES];
+      
+      setDrawnNotes(resetDrawnNotes);
+      setAvailableNotes(resetAvailableNotes);
+      
+      // Save the reset state
+      SecureStorage.setItem('heartspace_drawn_notes', JSON.stringify(resetDrawnNotes));
+    }
+
     setIsShaking(true);
     
     // Simulate shaking animation time
@@ -47,15 +73,24 @@ export const LuckyBox: React.FC = () => {
       setIsShaking(false);
       setShowAnimation(true);
       
-      // Pick a random note
-      const randomNote = WINTER_NOTES[Math.floor(Math.random() * WINTER_NOTES.length)];
-      setCurrentNote(randomNote);
+      // Pick a random note from available notes
+      const randomIndex = Math.floor(Math.random() * availableNotes.length);
+      const selectedNote = availableNotes[randomIndex];
+      
+      // Update drawn notes and available notes
+      const newDrawnNotes = [...drawnNotes, selectedNote];
+      const newAvailableNotes = availableNotes.filter((_, index) => index !== randomIndex);
+      
+      setCurrentNote(selectedNote);
+      setDrawnNotes(newDrawnNotes);
+      setAvailableNotes(newAvailableNotes);
       setIsOpen(true);
       
       // Save to secure localStorage
       const today = new Date().toDateString();
       SecureStorage.setItem('heartspace_lucky_date', today);
-      SecureStorage.setItem('heartspace_lucky_note', randomNote);
+      SecureStorage.setItem('heartspace_lucky_note', selectedNote);
+      SecureStorage.setItem('heartspace_drawn_notes', JSON.stringify(newDrawnNotes));
       
       // Hide opening animation after a bit
       setTimeout(() => {
@@ -83,6 +118,19 @@ export const LuckyBox: React.FC = () => {
             <br/>
             愿这句诗词，能温暖你的凛冬。
           </p>
+          {/* Progress indicator */}
+          <div className="mt-4 bg-white/20 rounded-full p-2">
+            <div className="flex justify-between text-xs text-sky-50 mb-1">
+              <span>收集进度</span>
+              <span>{drawnNotes.length}/{WINTER_NOTES.length}</span>
+            </div>
+            <div className="w-full bg-white/30 rounded-full h-2">
+              <div 
+                className="bg-white h-2 rounded-full transition-all duration-500"
+                style={{ width: `${(drawnNotes.length / WINTER_NOTES.length) * 100}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -108,6 +156,9 @@ export const LuckyBox: React.FC = () => {
             </div>
             <p className="text-center mt-8 text-stone-500 font-medium tracking-wide">
               点击抽取今日冬日签
+            </p>
+            <p className="text-center mt-2 text-stone-400 text-sm">
+              剩余 {availableNotes.length} 句诗词待收集
             </p>
           </div>
         ) : (
@@ -141,7 +192,10 @@ export const LuckyBox: React.FC = () => {
             </div>
             
             <p className="text-center mt-8 text-stone-400 text-sm">
-              明天再来看看吧 ~
+              {drawnNotes.length >= WINTER_NOTES.length 
+                ? '🎉 恭喜！你已收集完所有冬日签，即将重新开始收集之旅 ~' 
+                : '明天再来看看吧 ~'
+              }
             </p>
           </div>
         )}

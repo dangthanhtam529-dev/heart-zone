@@ -16,6 +16,7 @@ export interface MoodEntry {
   photoUrl?: string;
   note?: string;
   userId?: string; // Linked to user
+  tags?: string[]; // 心情标签
 }
 
 export interface MoodConfig {
@@ -49,4 +50,14 @@ export interface MoodReport {
   topMood: MoodType | null; // 出现次数最多的心情
   moodCounts: Record<MoodType, number>; // 各心情计数
   content?: string; // 个性化内容描述
+}
+
+// 情绪急救箱项目
+export interface EmergencyKitItem {
+  id: string;
+  title: string;
+  description: string;
+  category: 'breathing' | 'movement' | 'mindfulness' | 'self-care' | 'custom';
+  duration?: number; // 建议时长（分钟）
+  isCustom?: boolean;
 }

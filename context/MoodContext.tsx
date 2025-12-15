@@ -14,6 +14,10 @@ interface MoodContextType {
   isLoading: boolean;
   exportData: () => void;
   clearAllData: () => void;
+  // 标签功能
+  getAllTags: () => string[];
+  getMoodsByTag: (tag: string) => MoodEntry[];
+  getTagCounts: () => Record<string, number>;
 }
 
 const MoodContext = createContext<MoodContextType | undefined>(undefined);
@@ -150,6 +154,33 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
      setMoods([]);
   }, [user]);
 
+  // 标签相关功能
+  const getAllTags = useCallback(() => {
+    const allTags = new Set<string>();
+    moods.forEach(mood => {
+      if (mood.tags) {
+        mood.tags.forEach(tag => allTags.add(tag));
+      }
+    });
+    return Array.from(allTags).sort();
+  }, [moods]);
+
+  const getMoodsByTag = useCallback((tag: string) => {
+    return moods.filter(mood => mood.tags && mood.tags.includes(tag));
+  }, [moods]);
+
+  const getTagCounts = useCallback(() => {
+    const tagCounts: Record<string, number> = {};
+    moods.forEach(mood => {
+      if (mood.tags) {
+        mood.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      }
+    });
+    return tagCounts;
+  }, [moods]);
+
   return (
     <MoodContext.Provider value={{ 
       moods, 
@@ -159,7 +190,10 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearHealingSuggestion, 
       isLoading,
       exportData,
-      clearAllData
+      clearAllData,
+      getAllTags,
+      getMoodsByTag,
+      getTagCounts
     }}>
       {children}
     </MoodContext.Provider>

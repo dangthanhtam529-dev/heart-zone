@@ -2,10 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { useMoodStore } from '../context/MoodContext';
 import { useReportStore } from '../context/ReportContext';
 import { useAuth } from '../context/AuthContext';
-import { Ghost, Calendar, Trash2, Heart, Star, Sparkles, Moon, Gift, Hourglass, ChevronLeft, ChevronRight, Truck } from 'lucide-react';
+import { Ghost, Calendar, Trash2, Heart, Star, Sparkles, Moon, Gift, Hourglass, ChevronLeft, ChevronRight, Truck, HeartPulse } from 'lucide-react';
 import { MoodCard } from '../components/MoodCard';
 import { LuckyBox } from '../components/LuckyBox';
 import { TimeCourier } from '../components/TimeCourier';
+import { TagCloud } from '../components/TagCloud';
+import { EmergencyKit } from '../components/EmergencyKit';
 import { Link } from 'react-router-dom';
 import { MoodType } from '../types';
 import { MOOD_CONFIGS } from '../constants';
@@ -254,7 +256,7 @@ export const MoodList: React.FC = () => {
     deleteMonthlyReport 
   } = useReportStore();
   
-  const [activeTab, setActiveTab] = useState<'cards' | 'briefing' | 'heartsea' | 'luckybox' | 'courier' | null>(null);
+  const [activeTab, setActiveTab] = useState<'cards' | 'briefing' | 'emergency' | 'heartsea' | 'luckybox' | 'courier' | null>(null);
   const [briefingType, setBriefingType] = useState<'weekly' | 'monthly'>('weekly');
   
   // 切换简报类型时重置分页
@@ -335,6 +337,21 @@ export const MoodList: React.FC = () => {
               </div>
             ) : (
               <>
+                {/* 标签云 */}
+                <div className="bg-white rounded-2xl p-5 mb-6 border border-stone-100">
+                  <h3 className="font-bold text-stone-700 mb-4 flex items-center">
+                    <Sparkles size={16} className="mr-2 text-orange-400" />
+                    心情标签云
+                  </h3>
+                  <TagCloud 
+                    onTagSelect={(tag) => {
+                      // 可以添加标签筛选功能
+                      console.log('选中标签:', tag);
+                    }}
+                    showCount={true}
+                  />
+                </div>
+                
                 <div className="space-y-4">
                   {getPaginatedData(moods, moodPage).map((mood) => (
                     <MoodCard key={mood.id} entry={mood} onDelete={deleteMood} />
@@ -455,10 +472,26 @@ export const MoodList: React.FC = () => {
           </div>
         )}
         
+        {(!activeTab || activeTab === 'emergency') && (
+          <button 
+            onClick={() => handleTabClick('emergency')}
+            className={`w-full text-left p-4 rounded-2xl transition-all flex items-center ${
+              activeTab === 'emergency' 
+                ? 'bg-orange-100 border border-orange-200 text-orange-700 font-medium' 
+                : 'bg-white border border-stone-100 text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            <HeartPulse size={18} className="mr-2 opacity-80" />
+            情绪急救箱
+          </button>
+        )}
 
-
-
-
+        {activeTab === 'emergency' && (
+          <div className="animate-fade-in mt-4 mb-8">
+            <EmergencyKit />
+          </div>
+        )}
+        
         {(!activeTab || activeTab === 'heartsea') && (
           <button 
             onClick={() => handleTabClick('heartsea')}

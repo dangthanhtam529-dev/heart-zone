@@ -5,7 +5,7 @@ import { useMoodStore } from '../context/MoodContext';
 import { MoodType } from '../types';
 import { MOOD_CONFIGS, getMoodIcon } from '../constants';
 import { Button } from '../components/Button';
-import { MapPin, Activity } from 'lucide-react';
+import { MapPin, Activity, Tag, Plus, X } from 'lucide-react';
 
 export const CreateMood: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +15,8 @@ export const CreateMood: React.FC = () => {
   const [activity, setActivity] = useState('');
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   const [note, setNote] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,13 +30,33 @@ export const CreateMood: React.FC = () => {
         location: location || '未知地点',
         activity: activity || '发呆',
         mood: selectedMood,
-        note
+        note,
+        tags: tags.length > 0 ? tags : undefined
       });
       navigate('/list');
     } catch (e) {
       alert('发布失败，请重试');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const addTag = () => {
+    const trimmedTag = newTag.trim();
+    if (trimmedTag && !tags.includes(trimmedTag) && tags.length < 5) {
+      setTags([...tags, trimmedTag]);
+      setNewTag('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
     }
   };
 
@@ -114,6 +136,57 @@ export const CreateMood: React.FC = () => {
               rows={3}
               className="w-full p-4 bg-white rounded-2xl border border-stone-100 focus:border-orange-300 focus:ring-4 focus:ring-orange-100/50 outline-none transition-all placeholder-stone-300 text-stone-700 text-sm resize-none shadow-sm"
             />
+           </div>
+
+           {/* 标签输入 */}
+           <div className="relative">
+             <div className="flex items-center gap-2 mb-2">
+               <Tag size={16} className="text-stone-400" />
+               <span className="text-sm text-stone-600">添加标签（最多5个）</span>
+             </div>
+             
+             {/* 已添加的标签 */}
+             {tags.length > 0 && (
+               <div className="flex flex-wrap gap-2 mb-3">
+                 {tags.map((tag) => (
+                   <span
+                     key={tag}
+                     className="inline-flex items-center px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm"
+                   >
+                     {tag}
+                     <button
+                       type="button"
+                       onClick={() => removeTag(tag)}
+                       className="ml-2 hover:text-orange-900"
+                     >
+                       <X size={14} />
+                     </button>
+                   </span>
+                 ))}
+               </div>
+             )}
+             
+             {/* 标签输入框 */}
+             {tags.length < 5 && (
+               <div className="flex gap-2">
+                 <input
+                   type="text"
+                   value={newTag}
+                   onChange={(e) => setNewTag(e.target.value)}
+                   onKeyPress={handleTagInputKeyPress}
+                   placeholder="输入标签..."
+                   className="flex-1 p-3 bg-white rounded-xl border border-stone-100 focus:border-orange-300 focus:ring-4 focus:ring-orange-100/50 outline-none transition-all placeholder-stone-300 text-stone-700 text-sm shadow-sm"
+                 />
+                 <button
+                   type="button"
+                   onClick={addTag}
+                   disabled={!newTag.trim()}
+                   className="px-4 py-3 bg-orange-100 text-orange-700 rounded-xl hover:bg-orange-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                 >
+                   <Plus size={18} />
+                 </button>
+               </div>
+             )}
            </div>
         </section>
 
