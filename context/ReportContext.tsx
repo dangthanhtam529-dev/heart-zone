@@ -345,28 +345,25 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       // Update old weekly reports to fix "first report" issue
       const updatedWeeklyReports = userWeeklyReports.map(report => {
-        if (report.insights && report.insights.trendSummary && report.insights.trendSummary.includes('第一份报告')) {
-          // Calculate previous week's avg score based on report's date
-          const reportDate = new Date(report.startDate);
-          const prevWeekStart = startOfWeek(subWeeks(reportDate, 1), { weekStartsOn: 1 });
-          const prevWeekEnd = endOfWeek(subWeeks(reportDate, 1), { weekStartsOn: 1 });
-          const prevWeeklyMoods = moods.filter(mood => {
-            const moodDate = new Date(mood.timestamp);
-            return moodDate >= prevWeekStart && moodDate <= prevWeekEnd;
-          });
-          const prevWeekAvgScore = prevWeeklyMoods.length > 0 
-            ? prevWeeklyMoods.reduce((a, b) => a + MOOD_CONFIGS[b.mood].score, 0) / prevWeeklyMoods.length
-            : 0;
-          
-          return {
-            ...report,
-            insights: {
-              ...report.insights,
-              trendSummary: calculateTrendSummary(report.avgScore, prevWeekAvgScore, 'weekly')
-            }
-          };
-        }
-        return report;
+        // Always recalculate trend summary for all weekly reports to ensure consistency
+        const reportDate = new Date(report.startDate);
+        const prevWeekStart = startOfWeek(subWeeks(reportDate, 1), { weekStartsOn: 1 });
+        const prevWeekEnd = endOfWeek(subWeeks(reportDate, 1), { weekStartsOn: 1 });
+        const prevWeeklyMoods = moods.filter(mood => {
+          const moodDate = new Date(mood.timestamp);
+          return moodDate >= prevWeekStart && moodDate <= prevWeekEnd;
+        });
+        const prevWeekAvgScore = prevWeeklyMoods.length > 0 
+          ? prevWeeklyMoods.reduce((a, b) => a + MOOD_CONFIGS[b.mood].score, 0) / prevWeeklyMoods.length
+          : 0;
+        
+        return {
+          ...report,
+          insights: {
+            ...report.insights,
+            trendSummary: calculateTrendSummary(report.avgScore, prevWeekAvgScore, 'weekly')
+          }
+        };
       });
       
       setWeeklyReports(updatedWeeklyReports);
@@ -377,28 +374,25 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       // Update old monthly reports to fix "first report" issue
       const updatedMonthlyReports = userMonthlyReports.map(report => {
-        if (report.insights && report.insights.trendSummary && report.insights.trendSummary.includes('第一份报告')) {
-          // Calculate previous month's avg score based on report's date
-          const reportDate = new Date(report.startDate);
-          const prevMonthStart = startOfMonth(subMonths(reportDate, 1));
-          const prevMonthEnd = endOfMonth(subMonths(reportDate, 1));
-          const prevMonthlyMoods = moods.filter(mood => {
-            const moodDate = new Date(mood.timestamp);
-            return moodDate >= prevMonthStart && moodDate <= prevMonthEnd;
-          });
-          const prevMonthAvgScore = prevMonthlyMoods.length > 0 
-            ? prevMonthlyMoods.reduce((a, b) => a + MOOD_CONFIGS[b.mood].score, 0) / prevMonthlyMoods.length
-            : 0;
-          
-          return {
-            ...report,
-            insights: {
-              ...report.insights,
-              trendSummary: calculateTrendSummary(report.avgScore, prevMonthAvgScore, 'monthly')
-            }
-          };
-        }
-        return report;
+        // Always recalculate trend summary for all monthly reports to ensure consistency
+        const reportDate = new Date(report.startDate);
+        const prevMonthStart = startOfMonth(subMonths(reportDate, 1));
+        const prevMonthEnd = endOfMonth(subMonths(reportDate, 1));
+        const prevMonthlyMoods = moods.filter(mood => {
+          const moodDate = new Date(mood.timestamp);
+          return moodDate >= prevMonthStart && moodDate <= prevMonthEnd;
+        });
+        const prevMonthAvgScore = prevMonthlyMoods.length > 0 
+          ? prevMonthlyMoods.reduce((a, b) => a + MOOD_CONFIGS[b.mood].score, 0) / prevMonthlyMoods.length
+          : 0;
+        
+        return {
+          ...report,
+          insights: {
+            ...report.insights,
+            trendSummary: calculateTrendSummary(report.avgScore, prevMonthAvgScore, 'monthly')
+          }
+        };
       });
       
       setMonthlyReports(updatedMonthlyReports);

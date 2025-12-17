@@ -231,17 +231,52 @@ export const MoodTrends: React.FC = () => {
 
   // 识别关键节点
   const keyNodes = useMemo(() => {
-    return chartData.filter(item => {
-      if (item.score === null) return false;
-      // 识别峰值和谷值
-      const prevScore = chartData[chartData.indexOf(item) - 1]?.score || item.score;
-      const nextScore = chartData[chartData.indexOf(item) + 1]?.score || item.score;
-      
-      return (
-        (item.score > prevScore && item.score > nextScore) || // 峰值
-        (item.score < prevScore && item.score < nextScore) || // 谷值
-        Math.abs(item.score - 3) > 1.5 // 远离平均值
-      );
+    if (chartData.length === 0) return [];
+    
+    // 1. 筛选心情很低的节点（分数 <= 2.5）
+    const lowMoodNodes = chartData.filter(item => {
+      return item.score !== null && item.score <= 2.5;
+    });
+    
+    // 2. 筛选高峰节点（分数 > 3.5）并按分数分组
+    const highMoodNodes = chartData.filter(item => {
+      return item.score !== null && item.score > 3.5;
+    });
+    
+    // 3. 对高峰节点按分数分组，每组只保留记录数最多的节点
+    const highScoreGroups: Record<number, typeof chartData> = {};
+    highMoodNodes.forEach(node => {
+      if (node.score === null) return;
+      const scoreKey = Math.round(node.score * 10) / 10; // 保留一位小数作为分组键
+      if (!highScoreGroups[scoreKey]) {
+        highScoreGroups[scoreKey] = [];
+      }
+      highScoreGroups[scoreKey].push(node);
+    });
+    
+    // 4. 从每组高峰节点中选取记录数最多的节点
+    const topHighNodes = Object.values(highScoreGroups).map(group => {
+      return group.reduce((max, current) => {
+        return current.count > max.count ? current : max;
+      });
+    });
+    
+    // 5. 合并低心情节点和高心情节点，去重并按日期排序
+    const allNodes = [...lowMoodNodes, ...topHighNodes];
+    
+    // 去重（按日期）
+    const uniqueNodes: typeof chartData = [];
+    const seenDates = new Set<string>();
+    allNodes.forEach(node => {
+      if (!seenDates.has(node.date)) {
+        seenDates.add(node.date);
+        uniqueNodes.push(node);
+      }
+    });
+    
+    // 按日期排序
+    return uniqueNodes.sort((a, b) => {
+      return new Date(a.originalDate).getTime() - new Date(b.originalDate).getTime();
     });
   }, [chartData]);
 
@@ -290,13 +325,13 @@ export const MoodTrends: React.FC = () => {
             <span className="text-xs text-stone-500 block font-medium mb-1">平均心情值</span>
             <span className="text-2xl font-bold text-stone-600">{averageMood} <span className="text-xs font-normal text-stone-400">/ 5.0</span></span>
           </div>
-          {/* 近30天范围不显示对比按钮 */}
-          {timeRange !== '30days' && (
+          {/* 只保留本周的对比功能 */}
+          {timeRange === 'week' && (
             <button
               onClick={() => setShowComparison(!showComparison)}
               className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${showComparison ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}`}
             >
-              {showComparison ? '隐藏对比' : `${timeRange === 'week' ? '上周' : '上月'}对比`}
+              {showComparison ? '隐藏对比' : '上周对比'}
             </button>
           )}
         </div>
@@ -367,42 +402,32 @@ export const MoodTrends: React.FC = () => {
               dataKey="score" 
               stroke="#fb923c" 
               strokeWidth={4}
-              dot={{ 
+              dot={timeRange === 'week' ? { 
                 r: 6, 
                 fill: '#fb923c', 
                 stroke: '#ffffff',
                 strokeWidth: 2,
                 onClick: (data: any) => setSelectedDay(data.payload)
-              }}
-              activeDot={{ 
+              } : false}
+              activeDot={timeRange === 'week' ? { 
                 r: 8, 
                 strokeWidth: 2, 
                 stroke: '#ffffff',
                 fill: '#fb923c'
-              }}
+              } : false}
               connectNulls
             />
             
-            {/* 对比周期曲线 */}
-            {showComparison && (
+            {/* 对比周期曲线 - 只在本周显示 */}
+            {timeRange === 'week' && showComparison && (
               <Line 
                 type="monotone" 
                 dataKey="compareScore" 
                 stroke="#60a5fa" 
                 strokeWidth={3}
                 strokeDasharray="5 5"
-                dot={{ 
-                  r: 5, 
-                  fill: '#60a5fa', 
-                  stroke: '#ffffff',
-                  strokeWidth: 2
-                }}
-                activeDot={{ 
-                  r: 7, 
-                  strokeWidth: 2, 
-                  stroke: '#ffffff',
-                  fill: '#60a5fa'
-                }}
+                dot={false}
+                activeDot={false}
                 connectNulls
               />
             )}
@@ -415,23 +440,25 @@ export const MoodTrends: React.FC = () => {
         <div className="mb-10">
           <h2 className="text-lg font-bold text-stone-700 mb-4 ml-1">关键节点</h2>
           <div className="bg-white border border-stone-100 rounded-[2rem] p-5 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {keyNodes.map((node, index) => (
-                <div 
-                  key={index}
-                  className="bg-stone-50 rounded-xl p-4 border border-stone-100 hover:bg-orange-50 hover:border-orange-100 transition-colors cursor-pointer"
-                  onClick={() => setSelectedDay(node)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <p className="text-sm font-medium text-stone-800">{node.date}</p>
-                    <div className={`w-3 h-3 rounded-full ${node.score > 3.5 ? 'bg-green-500' : node.score < 2.5 ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
+            <div className="overflow-x-auto pb-4 scrollbar-hide">
+              <div className="flex gap-3 min-w-max">
+                {keyNodes.map((node, index) => (
+                  <div 
+                    key={index}
+                    className="bg-stone-50 rounded-xl p-4 border border-stone-100 hover:bg-orange-50 hover:border-orange-100 transition-colors cursor-pointer min-w-[120px]"
+                    onClick={() => setSelectedDay(node)}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="text-sm font-medium text-stone-800">{node.date}</p>
+                      <div className={`w-3 h-3 rounded-full ${node.score > 3.5 ? 'bg-green-500' : node.score < 2.5 ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
+                    </div>
+                    <p className="text-xs text-stone-600 mb-1">
+                      {node.score > 3.5 ? '心情高峰' : node.score < 2.5 ? '心情低谷' : '情绪波动'}
+                    </p>
+                    <p className="text-xs font-medium text-stone-700">心情分数: {node.score}</p>
                   </div>
-                  <p className="text-xs text-stone-600 mb-1">
-                    {node.score > 3.5 ? '心情高峰' : node.score < 2.5 ? '心情低谷' : '情绪波动'}
-                  </p>
-                  <p className="text-xs font-medium text-stone-700">心情分数: {node.score}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
