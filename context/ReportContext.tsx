@@ -53,6 +53,63 @@ const calculateMoodStats = (moods: any[]) => {
   return { moodCounts, topMood, totalEntries: moods.length };
 };
 
+// Helper to calculate activity statistics
+const calculateActivityStats = (moods: any[]) => {
+  const activityCounts: Record<string, number> = {};
+
+  moods.forEach(mood => {
+    if (mood.activity && mood.activity !== '发呆') {
+      activityCounts[mood.activity] = (activityCounts[mood.activity] || 0) + 1;
+    }
+  });
+
+  let mostFrequentActivity = '发呆';
+  let maxActivityCount = 0;
+
+  Object.entries(activityCounts).forEach(([activity, count]) => {
+    if (count > maxActivityCount) {
+      maxActivityCount = count;
+      mostFrequentActivity = activity;
+    }
+  });
+
+  return mostFrequentActivity;
+};
+
+// Helper to calculate mood distribution
+const calculateMoodDistribution = (moodCounts: Record<MoodType, number>, totalEntries: number) => {
+  if (totalEntries === 0) {
+    return { positive: 0, negative: 0 };
+  }
+
+  // Positive moods: HAPPY, CALM
+  const positiveCount = moodCounts[MoodType.HAPPY] + moodCounts[MoodType.CALM];
+  // Negative moods: TIRED, SAD, ANNOYED
+  const negativeCount = moodCounts[MoodType.TIRED] + moodCounts[MoodType.SAD] + moodCounts[MoodType.ANNOYED];
+  // Neutral is neither positive nor negative
+
+  return {
+    positive: parseFloat(((positiveCount / totalEntries) * 100).toFixed(0)),
+    negative: parseFloat(((negativeCount / totalEntries) * 100).toFixed(0))
+  };
+};
+
+// Helper to calculate trend summary
+const calculateTrendSummary = (currentAvg: number, previousAvg: number, reportType: 'weekly' | 'monthly') => {
+  // 不再使用previousAvg === 0来判断是否是第一份报告，因为这会导致周报和月报互相影响
+  // 而是根据reportType返回不同的趋势描述
+  const difference = currentAvg - previousAvg;
+  const percentageChange = previousAvg !== 0 ? (difference / previousAvg) * 100 : 0;
+
+  if (percentageChange > 10) {
+    return `${reportType === 'weekly' ? '本周' : '本月'}你的心情总体呈上升趋势，继续保持哦！`;
+  } else if (percentageChange < -10) {
+    return `${reportType === 'weekly' ? '本周' : '本月'}你的心情总体呈下降趋势，记得照顾好自己！`;
+  } else {
+    return `${reportType === 'weekly' ? '本周' : '本月'}你的心情总体呈平稳趋势，保持内心的宁静！`;
+  }
+};
+
 // 智能周报内容生成器
 const generatePersonalizedWeeklyContent = (
   avgScore: number,
@@ -147,7 +204,7 @@ const generatePersonalizedMonthlyContent = (
   // 月度深度分析
   const mostFrequentMood = Object.entries(moodCounts)
     .filter(([,count]) => count > 0)
-    .sort(([,a], [,b]) => b - a)[0];
+    .sort(([,a], [,b]) => b - a)[0] || [MoodType.NEUTRAL, 0]; // 默认值避免undefined
   
   const moodTrend = avgScore >= 4 ? '积极' : avgScore >= 3 ? '平稳' : '挑战';
   
@@ -241,35 +298,6 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [weeklyReports, setWeeklyReports] = useState<MoodReport[]>([]);
   const [monthlyReports, setMonthlyReports] = useState<MoodReport[]>([]);
 
-  // Load reports from LocalStorage
-  const fetchReports = useCallback(() => {
-    if (!user) return;
-    
-    try {
-      // Load weekly reports
-      const allWeeklyReports: MoodReport[] = SecureStorage.getItem(DB_WEEKLY_REPORTS_KEY) || [];
-      const userWeeklyReports = allWeeklyReports.filter(r => r.userId === user.id);
-      setWeeklyReports(userWeeklyReports);
-      
-      // Load monthly reports
-      const allMonthlyReports: MoodReport[] = SecureStorage.getItem(DB_MONTHLY_REPORTS_KEY) || [];
-      const userMonthlyReports = allMonthlyReports.filter(r => r.userId === user.id);
-      setMonthlyReports(userMonthlyReports);
-    } catch (e) {
-      console.error("Failed to load reports", e);
-    }
-  }, [user]);
-
-  // Initial Fetch
-  useEffect(() => {
-    if (user) {
-      fetchReports();
-    } else {
-      setWeeklyReports([]);
-      setMonthlyReports([]);
-    }
-  }, [user, fetchReports]);
-
   const saveWeeklyReports = useCallback((reports: MoodReport[]) => {
     if (!user) return;
     
@@ -305,6 +333,93 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.error("Failed to save monthly reports", e);
     }
   }, [user]);
+
+  // Load reports from LocalStorage
+  const fetchReports = useCallback(() => {
+    if (!user) return;
+    
+    try {
+      // Load weekly reports
+      const allWeeklyReports: MoodReport[] = SecureStorage.getItem(DB_WEEKLY_REPORTS_KEY) || [];
+      const userWeeklyReports = allWeeklyReports.filter(r => r.userId === user.id);
+      
+      // Update old weekly reports to fix "first report" issue
+      const updatedWeeklyReports = userWeeklyReports.map(report => {
+        if (report.insights && report.insights.trendSummary && report.insights.trendSummary.includes('第一份报告')) {
+          // Calculate previous week's avg score based on report's date
+          const reportDate = new Date(report.startDate);
+          const prevWeekStart = startOfWeek(subWeeks(reportDate, 1), { weekStartsOn: 1 });
+          const prevWeekEnd = endOfWeek(subWeeks(reportDate, 1), { weekStartsOn: 1 });
+          const prevWeeklyMoods = moods.filter(mood => {
+            const moodDate = new Date(mood.timestamp);
+            return moodDate >= prevWeekStart && moodDate <= prevWeekEnd;
+          });
+          const prevWeekAvgScore = prevWeeklyMoods.length > 0 
+            ? prevWeeklyMoods.reduce((a, b) => a + MOOD_CONFIGS[b.mood].score, 0) / prevWeeklyMoods.length
+            : 0;
+          
+          return {
+            ...report,
+            insights: {
+              ...report.insights,
+              trendSummary: calculateTrendSummary(report.avgScore, prevWeekAvgScore, 'weekly')
+            }
+          };
+        }
+        return report;
+      });
+      
+      setWeeklyReports(updatedWeeklyReports);
+      
+      // Load monthly reports
+      const allMonthlyReports: MoodReport[] = SecureStorage.getItem(DB_MONTHLY_REPORTS_KEY) || [];
+      const userMonthlyReports = allMonthlyReports.filter(r => r.userId === user.id);
+      
+      // Update old monthly reports to fix "first report" issue
+      const updatedMonthlyReports = userMonthlyReports.map(report => {
+        if (report.insights && report.insights.trendSummary && report.insights.trendSummary.includes('第一份报告')) {
+          // Calculate previous month's avg score based on report's date
+          const reportDate = new Date(report.startDate);
+          const prevMonthStart = startOfMonth(subMonths(reportDate, 1));
+          const prevMonthEnd = endOfMonth(subMonths(reportDate, 1));
+          const prevMonthlyMoods = moods.filter(mood => {
+            const moodDate = new Date(mood.timestamp);
+            return moodDate >= prevMonthStart && moodDate <= prevMonthEnd;
+          });
+          const prevMonthAvgScore = prevMonthlyMoods.length > 0 
+            ? prevMonthlyMoods.reduce((a, b) => a + MOOD_CONFIGS[b.mood].score, 0) / prevMonthlyMoods.length
+            : 0;
+          
+          return {
+            ...report,
+            insights: {
+              ...report.insights,
+              trendSummary: calculateTrendSummary(report.avgScore, prevMonthAvgScore, 'monthly')
+            }
+          };
+        }
+        return report;
+      });
+      
+      setMonthlyReports(updatedMonthlyReports);
+      
+      // Save the updated reports back to storage
+      saveWeeklyReports(updatedWeeklyReports);
+      saveMonthlyReports(updatedMonthlyReports);
+    } catch (e) {
+      console.error("Failed to load reports", e);
+    }
+  }, [user, moods, saveWeeklyReports, saveMonthlyReports]);
+
+  // Initial Fetch
+  useEffect(() => {
+    if (user) {
+      fetchReports();
+    } else {
+      setWeeklyReports([]);
+      setMonthlyReports([]);
+    }
+  }, [user, fetchReports]);
 
   // Generate Weekly Report Logic
   const generateWeeklyReport = useCallback((date: Date, currentReports: MoodReport[]) => {
@@ -342,6 +457,25 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         user.username || '用户'
       );
 
+      // 计算前一周的平均分数
+      const prevWeekStart = startOfWeek(subWeeks(date, 1), { weekStartsOn: 1 });
+      const prevWeekEnd = endOfWeek(subWeeks(date, 1), { weekStartsOn: 1 });
+      const prevWeeklyMoods = moods.filter(mood => {
+        const moodDate = new Date(mood.timestamp);
+        return moodDate >= prevWeekStart && moodDate <= prevWeekEnd;
+      });
+      const prevWeekAvgScore = prevWeeklyMoods.length > 0 
+        ? prevWeeklyMoods.reduce((a, b) => a + MOOD_CONFIGS[b.mood].score, 0) / prevWeeklyMoods.length
+        : 0;
+
+      // 生成智能洞察
+      const distribution = calculateMoodDistribution(moodCounts, totalEntries);
+      const insights = {
+        trendSummary: calculateTrendSummary(avgScore, prevWeekAvgScore, 'weekly'),
+        frequentActivity: calculateActivityStats(weeklyMoods),
+        moodDistribution: `本周积极情绪占${distribution.positive}%，需要关注的情绪占${distribution.negative}%`
+      };
+
       const newReport: MoodReport = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         type: 'weekly',
@@ -355,7 +489,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         totalEntries,
         topMood,
         moodCounts,
-        content: personalizedContent // 添加个性化内容
+        content: personalizedContent, // 添加个性化内容
+        insights // 添加智能洞察
       };
       
       return newReport;
@@ -399,6 +534,25 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         user.username || '用户'
       );
 
+      // 计算前一月的平均分数
+      const prevMonthStart = startOfMonth(subMonths(date, 1));
+      const prevMonthEnd = endOfMonth(subMonths(date, 1));
+      const prevMonthlyMoods = moods.filter(mood => {
+        const moodDate = new Date(mood.timestamp);
+        return moodDate >= prevMonthStart && moodDate <= prevMonthEnd;
+      });
+      const prevMonthAvgScore = prevMonthlyMoods.length > 0 
+        ? prevMonthlyMoods.reduce((a, b) => a + MOOD_CONFIGS[b.mood].score, 0) / prevMonthlyMoods.length
+        : 0;
+
+      // 生成智能洞察
+      const distribution = calculateMoodDistribution(moodCounts, totalEntries);
+      const insights = {
+        trendSummary: calculateTrendSummary(avgScore, prevMonthAvgScore, 'monthly'),
+        frequentActivity: calculateActivityStats(monthlyMoods),
+        moodDistribution: `本月积极情绪占${distribution.positive}%，需要关注的情绪占${distribution.negative}%`
+      };
+
       const newReport: MoodReport = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         type: 'monthly',
@@ -412,7 +566,8 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         totalEntries,
         topMood,
         moodCounts,
-        content: personalizedContent // 添加个性化内容
+        content: personalizedContent, // 添加个性化内容
+        insights // 添加智能洞察
       };
       
       return newReport;

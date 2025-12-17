@@ -93,27 +93,27 @@ export const MoodProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update State
       setMoods(prev => [newEntry, ...prev]);
 
-      // Healing Logic
-      if (NEGATIVE_MOODS.includes(newEntry.mood)) {
-        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-        
-        // Search in current user's moods (use state or re-filter)
-        const userMoods = allMoods.filter(m => m.userId === user.id);
-        const candidates = userMoods.filter(m => 
-          m.timestamp > sevenDaysAgo && 
-          POSITIVE_MOODS.includes(m.mood) &&
-          m.id !== newEntry.id
-        );
+      // Healing Logic - 暂时取消
+      // if (NEGATIVE_MOODS.includes(newEntry.mood)) {
+      //   const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      //   
+      //   // Search in current user's moods (use state or re-filter)
+      //   const userMoods = allMoods.filter(m => m.userId === user.id);
+      //   const candidates = userMoods.filter(m => 
+      //     m.timestamp > sevenDaysAgo && 
+      //     POSITIVE_MOODS.includes(m.mood) &&
+      //     m.id !== newEntry.id
+      //   );
 
-        if (candidates.length > 0) {
-          const similar = candidates.find(c => 
-            c.activity.includes(newEntry.activity) || 
-            newEntry.activity.includes(c.activity) ||
-            c.location.includes(newEntry.location)
-          );
-          setHealingSuggestion(similar || candidates[0]);
-        }
-      }
+      //   if (candidates.length > 0) {
+      //     const similar = candidates.find(c => 
+      //       c.activity.includes(newEntry.activity) || 
+      //       newEntry.activity.includes(c.activity) ||
+      //       c.location.includes(newEntry.location)
+      //     );
+      //     setHealingSuggestion(similar || candidates[0]);
+      //   }
+      // }
     } catch (e) {
       console.error("Failed to add mood", e);
       alert("保存失败，可能是本地存储已满");

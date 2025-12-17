@@ -50,6 +50,11 @@ export interface MoodReport {
   topMood: MoodType | null; // 出现次数最多的心情
   moodCounts: Record<MoodType, number>; // 各心情计数
   content?: string; // 个性化内容描述
+  insights?: {
+    trendSummary: string; // 情绪趋势总结
+    frequentActivity: string; // 高频活动识别
+    moodDistribution: string; // 情绪分布概览
+  };
 }
 
 // 情绪急救箱项目

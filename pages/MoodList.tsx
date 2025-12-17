@@ -96,10 +96,7 @@ const ReportCard: React.FC<{
         <div className="flex items-center space-x-4">
           <div className="flex-1 bg-stone-50 rounded-2xl p-3 text-center">
             <span className="block text-xs text-stone-400 mb-1">平均心情</span>
-            <span className={`text-xl font-bold ${
-              report.avgScore >= 4 ? 'text-orange-500' : 
-              report.avgScore >= 3 ? 'text-stone-600' : 'text-blue-500'
-            }`}>{report.avgScore}</span>
+            <span className={`text-xl font-bold ${report.avgScore >= 4 ? 'text-orange-500' : report.avgScore >= 3 ? 'text-stone-600' : 'text-blue-500'}`}>{report.avgScore}</span>
           </div>
           
           {report.totalEntries && (
@@ -121,14 +118,43 @@ const ReportCard: React.FC<{
           )}
         </div>
 
+        {/* Smart Insights */}
+        {report.insights && (
+          <div className="bg-stone-50 rounded-2xl p-4 border border-stone-100">
+            <h4 className="font-medium text-stone-700 mb-3 text-sm">智能洞察</h4>
+            <div className="space-y-2">
+              <div className="flex items-start">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 mr-2 flex-shrink-0"></div>
+                <p className="text-xs text-stone-600">
+                  {/* 替换旧数据中的"第一份报告"描述 */}
+                  {report.insights.trendSummary.includes('第一份报告') 
+                    ? `${report.type === 'weekly' ? '本周' : '本月'}你的心情总体呈平稳趋势，保持内心的宁静！` 
+                    : report.insights.trendSummary}
+                </p>
+              </div>
+              <div className="flex items-start">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 mr-2 flex-shrink-0"></div>
+                <p className="text-xs text-stone-600">你经常在{report.insights.frequentActivity}时记录心情</p>
+              </div>
+              <div className="flex items-start">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 mr-2 flex-shrink-0"></div>
+                <p className="text-xs text-stone-600">{report.insights.moodDistribution}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Detailed Feedback */}
         <div className="bg-orange-50/50 rounded-2xl p-4 border border-orange-100/50">
           <p className="text-stone-600 text-sm leading-relaxed">
-            {report.content || `${user?.username || '用户'}您好，${report.avgScore >= 4.5 ? '这段时间您的状态棒极了！保持这份快乐的能量，继续闪闪发光吧✨' :
-             report.avgScore >= 4.0 ? '这段时间过得很不错，虽然有小插曲，但整体是温暖而积极的🌻' :
-             report.avgScore >= 3.0 ? '这段时间心情比较平稳，平平淡淡才是真，在平凡的日子里也要照顾好自己☕' :
-             report.avgScore >= 2.0 ? '最近似乎有些疲惫，记得多给自己一些休息时间，不要太勉强自己🌙' :
-             '这段时间可能有些艰难，请允许自己难过一会儿，但别忘了，阴霾终会散去，我们都在陪着你🫂'}`}
+            {/* 检查content是否包含undefined，如果包含，就使用默认值 */}
+            {report.content && !report.content.includes('undefined') 
+              ? report.content 
+              : `${user?.username || '用户'}您好，${report.avgScore >= 4.5 ? '这段时间您的状态棒极了！保持这份快乐的能量，继续闪闪发光吧✨' :
+                 report.avgScore >= 4.0 ? '这段时间过得很不错，虽然有小插曲，但整体是温暖而积极的🌻' :
+                 report.avgScore >= 3.0 ? '这段时间心情比较平稳，平平淡淡才是真，在平凡的日子里也要照顾好自己☕' :
+                 report.avgScore >= 2.0 ? '最近似乎有些疲惫，记得多给自己一些休息时间，不要太勉强自己🌙' :
+                 '这段时间可能有些艰难，请允许自己难过一会儿，但别忘了，阴霾终会散去，我们都在陪着你🫂'}`}
           </p>
         </div>
       </div>
@@ -337,21 +363,6 @@ export const MoodList: React.FC = () => {
               </div>
             ) : (
               <>
-                {/* 标签云 */}
-                <div className="bg-white rounded-2xl p-5 mb-6 border border-stone-100">
-                  <h3 className="font-bold text-stone-700 mb-4 flex items-center">
-                    <Sparkles size={16} className="mr-2 text-orange-400" />
-                    心情标签云
-                  </h3>
-                  <TagCloud 
-                    onTagSelect={(tag) => {
-                      // 可以添加标签筛选功能
-                      console.log('选中标签:', tag);
-                    }}
-                    showCount={true}
-                  />
-                </div>
-                
                 <div className="space-y-4">
                   {getPaginatedData(moods, moodPage).map((mood) => (
                     <MoodCard key={mood.id} entry={mood} onDelete={deleteMood} />
