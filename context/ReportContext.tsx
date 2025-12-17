@@ -58,7 +58,8 @@ const calculateActivityStats = (moods: any[]) => {
   const activityCounts: Record<string, number> = {};
 
   moods.forEach(mood => {
-    if (mood.activity && mood.activity !== '发呆') {
+    // 确保activity是有效的字符串
+    if (mood.activity && typeof mood.activity === 'string' && mood.activity.trim() && mood.activity !== '发呆') {
       activityCounts[mood.activity] = (activityCounts[mood.activity] || 0) + 1;
     }
   });
@@ -345,10 +346,21 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       // Update old weekly reports to fix "first report" issue
       const updatedWeeklyReports = userWeeklyReports.map(report => {
-        // Always recalculate trend summary for all weekly reports to ensure consistency
-        const reportDate = new Date(report.startDate);
-        const prevWeekStart = startOfWeek(subWeeks(reportDate, 1), { weekStartsOn: 1 });
-        const prevWeekEnd = endOfWeek(subWeeks(reportDate, 1), { weekStartsOn: 1 });
+        // Filter moods for this report's time range
+        const reportStart = new Date(report.startDate);
+        const reportEnd = new Date(report.endDate);
+        const reportMoods = moods.filter(mood => {
+          const moodDate = new Date(mood.timestamp);
+          return moodDate >= reportStart && moodDate <= reportEnd;
+        });
+        
+        // Recalculate all insights for the report
+        const { moodCounts, totalEntries } = calculateMoodStats(reportMoods);
+        const distribution = calculateMoodDistribution(moodCounts, totalEntries);
+        
+        // Calculate previous week's avg score
+        const prevWeekStart = startOfWeek(subWeeks(reportStart, 1), { weekStartsOn: 1 });
+        const prevWeekEnd = endOfWeek(subWeeks(reportStart, 1), { weekStartsOn: 1 });
         const prevWeeklyMoods = moods.filter(mood => {
           const moodDate = new Date(mood.timestamp);
           return moodDate >= prevWeekStart && moodDate <= prevWeekEnd;
@@ -360,8 +372,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return {
           ...report,
           insights: {
-            ...report.insights,
-            trendSummary: calculateTrendSummary(report.avgScore, prevWeekAvgScore, 'weekly')
+            trendSummary: calculateTrendSummary(report.avgScore, prevWeekAvgScore, 'weekly'),
+            frequentActivity: calculateActivityStats(reportMoods),
+            moodDistribution: `本周积极情绪占${distribution.positive}%，需要关注的情绪占${distribution.negative}%`
           }
         };
       });
@@ -374,10 +387,21 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       // Update old monthly reports to fix "first report" issue
       const updatedMonthlyReports = userMonthlyReports.map(report => {
-        // Always recalculate trend summary for all monthly reports to ensure consistency
-        const reportDate = new Date(report.startDate);
-        const prevMonthStart = startOfMonth(subMonths(reportDate, 1));
-        const prevMonthEnd = endOfMonth(subMonths(reportDate, 1));
+        // Filter moods for this report's time range
+        const reportStart = new Date(report.startDate);
+        const reportEnd = new Date(report.endDate);
+        const reportMoods = moods.filter(mood => {
+          const moodDate = new Date(mood.timestamp);
+          return moodDate >= reportStart && moodDate <= reportEnd;
+        });
+        
+        // Recalculate all insights for the report
+        const { moodCounts, totalEntries } = calculateMoodStats(reportMoods);
+        const distribution = calculateMoodDistribution(moodCounts, totalEntries);
+        
+        // Calculate previous month's avg score
+        const prevMonthStart = startOfMonth(subMonths(reportStart, 1));
+        const prevMonthEnd = endOfMonth(subMonths(reportStart, 1));
         const prevMonthlyMoods = moods.filter(mood => {
           const moodDate = new Date(mood.timestamp);
           return moodDate >= prevMonthStart && moodDate <= prevMonthEnd;
@@ -389,8 +413,9 @@ export const ReportProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return {
           ...report,
           insights: {
-            ...report.insights,
-            trendSummary: calculateTrendSummary(report.avgScore, prevMonthAvgScore, 'monthly')
+            trendSummary: calculateTrendSummary(report.avgScore, prevMonthAvgScore, 'monthly'),
+            frequentActivity: calculateActivityStats(reportMoods),
+            moodDistribution: `本月积极情绪占${distribution.positive}%，需要关注的情绪占${distribution.negative}%`
           }
         };
       });

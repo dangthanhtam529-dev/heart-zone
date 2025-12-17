@@ -25,98 +25,39 @@ export const MoodTrends: React.FC = () => {
   // 自定义Tooltip组件
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      // 如果是对比模式，显示所有数据点的信息
-      if (showComparison && payload.length > 1) {
+      // 只显示当前周期的数据，不显示对比周期的数据
+      // 找到当前周期的数据点（通常是第一个，橙色）
+      const currentData = payload.find((p: any) => p.stroke === '#fb923c' || p.dataKey === 'score');
+      
+      if (currentData) {
         return (
           <div className="bg-white p-4 rounded-2xl shadow-lg border border-stone-100">
-            <p className="text-xs text-stone-500 mb-3">{label}</p>
-            
-            // 显示当前周期数据
-            <div className="mb-3">
-              <div className="flex items-center mb-2">
-                <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
-                <p className="text-sm font-medium text-stone-800">{timeRange === 'week' ? '本周' : timeRange === 'month' ? '本月' : '近30天'}分数：{payload[0].value || '无记录'}</p>
-              </div>
-              {payload[0].value && (
-                <div className="ml-5">
-                  {payload[0].payload.notes && payload[0].payload.notes.length > 0 && (
-                    <div className="mt-1 pt-1 border-t border-stone-100">
-                      <p className="text-xs font-medium text-stone-600 mb-1">心情笔记：</p>
-                      {payload[0].payload.notes.map((note: string, index: number) => (
-                        <p key={index} className="text-xs text-stone-500">• {note}</p>
-                      ))}
-                    </div>
-                  )}
-                  {payload[0].payload.activities && payload[0].payload.activities.length > 0 && (
-                    <div className="mt-1 pt-1 border-t border-stone-100">
-                      <p className="text-xs font-medium text-stone-600 mb-1">活动：</p>
-                      {payload[0].payload.activities.map((activity: string, index: number) => (
-                        <p key={index} className="text-xs text-stone-500">• {activity}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+            <p className="text-xs text-stone-500 mb-2">{currentData.payload.fullDate}</p>
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
+              <p className="text-sm font-medium text-stone-800">心情分数：{currentData.value}</p>
             </div>
-            
-            // 显示对比周期数据
-            <div>
-              <div className="flex items-center mb-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                <p className="text-sm font-medium text-stone-800">{timeRange === 'week' ? '上周' : timeRange === 'month' ? '上月' : '上月'}分数：{payload[1].value || '无记录'}</p>
+            {currentData.payload.notes && currentData.payload.notes.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-stone-100">
+                <p className="text-xs font-medium text-stone-600 mb-1">心情笔记：</p>
+                {currentData.payload.notes.map((note: string, index: number) => (
+                  <p key={index} className="text-xs text-stone-500">• {note}</p>
+                ))}
               </div>
-              {payload[1].value && comparisonChartData.length > 0 && comparisonChartData[payload[1].dataKey === 'score' ? payload[1].index : payload[0].index] && (
-                <div className="ml-5">
-                  {comparisonChartData[payload[1].dataKey === 'score' ? payload[1].index : payload[0].index].notes.length > 0 && (
-                    <div className="mt-1 pt-1 border-t border-stone-100">
-                      <p className="text-xs font-medium text-stone-600 mb-1">心情笔记：</p>
-                      {comparisonChartData[payload[1].dataKey === 'score' ? payload[1].index : payload[0].index].notes.map((note: string, index: number) => (
-                        <p key={index} className="text-xs text-stone-500">• {note}</p>
-                      ))}
-                    </div>
-                  )}
-                  {comparisonChartData[payload[1].dataKey === 'score' ? payload[1].index : payload[0].index].activities.length > 0 && (
-                    <div className="mt-1 pt-1 border-t border-stone-100">
-                      <p className="text-xs font-medium text-stone-600 mb-1">活动：</p>
-                      {comparisonChartData[payload[1].dataKey === 'score' ? payload[1].index : payload[0].index].activities.map((activity: string, index: number) => (
-                        <p key={index} className="text-xs text-stone-500">• {activity}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
+            {currentData.payload.activities && currentData.payload.activities.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-stone-100">
+                <p className="text-xs font-medium text-stone-600 mb-1">活动：</p>
+                {currentData.payload.activities.map((activity: string, index: number) => (
+                  <p key={index} className="text-xs text-stone-500">• {activity}</p>
+                ))}
+              </div>
+            )}
           </div>
         );
       }
-      
-      // 非对比模式，显示单个数据点信息
-      return (
-        <div className="bg-white p-4 rounded-2xl shadow-lg border border-stone-100">
-          <p className="text-xs text-stone-500 mb-2">{payload[0].payload.fullDate}</p>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
-            <p className="text-sm font-medium text-stone-800">心情分数：{payload[0].value}</p>
-          </div>
-          {payload[0].payload.notes && payload[0].payload.notes.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-stone-100">
-              <p className="text-xs font-medium text-stone-600 mb-1">心情笔记：</p>
-              {payload[0].payload.notes.map((note: string, index: number) => (
-                <p key={index} className="text-xs text-stone-500">• {note}</p>
-              ))}
-            </div>
-          )}
-          {payload[0].payload.activities && payload[0].payload.activities.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-stone-100">
-              <p className="text-xs font-medium text-stone-600 mb-1">活动：</p>
-              {payload[0].payload.activities.map((activity: string, index: number) => (
-                <p key={index} className="text-xs text-stone-500">• {activity}</p>
-              ))}
-            </div>
-          )}
-        </div>
-      );
     }
+    
     return null;
   };
 
@@ -129,7 +70,23 @@ export const MoodTrends: React.FC = () => {
     switch (range) {
       case 'week':
         const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-        const weekEnd = isCurrentPeriod ? now : endOfWeek(date, { weekStartsOn: 1 });
+        let weekEnd: Date;
+        
+        if (isCurrentPeriod) {
+          // 当前周期只显示到今天
+          weekEnd = now;
+        } else if (isComparison) {
+          // 对比周期显示到与当前周期对应的日期
+          // 计算当前周期的天数
+          const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 });
+          const currentWeekDays = Math.min(now.getDay() === 0 ? 7 : now.getDay(), 5); // 周一开始，最多5天
+          weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + currentWeekDays - 1);
+        } else {
+          // 非对比非当前周期，显示完整周
+          weekEnd = endOfWeek(date, { weekStartsOn: 1 });
+        }
+        
         dateRange = eachDayOfInterval({ start: weekStart, end: weekEnd });
         break;
       case 'month':
@@ -440,13 +397,20 @@ export const MoodTrends: React.FC = () => {
         <div className="mb-10">
           <h2 className="text-lg font-bold text-stone-700 mb-4 ml-1">关键节点</h2>
           <div className="bg-white border border-stone-100 rounded-[2rem] p-5 shadow-sm">
-            <div className="overflow-x-auto pb-4 scrollbar-hide">
+            <div className="overflow-x-auto pb-4 scrollbar-hide" style={{ touchAction: 'pan-x', userSelect: 'none' }}>
               <div className="flex gap-3 min-w-max">
                 {keyNodes.map((node, index) => (
                   <div 
                     key={index}
                     className="bg-stone-50 rounded-xl p-4 border border-stone-100 hover:bg-orange-50 hover:border-orange-100 transition-colors cursor-pointer min-w-[120px]"
-                    onClick={() => setSelectedDay(node)}
+                    onClick={() => {
+                      setSelectedDay(node);
+                      // 滚动到详情部分
+                      const detailsSection = document.getElementById('day-details');
+                      if (detailsSection) {
+                        detailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <p className="text-sm font-medium text-stone-800">{node.date}</p>
@@ -466,7 +430,7 @@ export const MoodTrends: React.FC = () => {
 
       {/* Selected Day Details */}
       {selectedDay && (
-        <div className="mb-10">
+        <div id="day-details" className="mb-10">
           <h2 className="text-lg font-bold text-stone-700 mb-4 ml-1">{selectedDay.fullDate} 详情</h2>
           <div className="bg-white border border-stone-100 rounded-[2rem] p-5 shadow-sm">
             <div className="space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
